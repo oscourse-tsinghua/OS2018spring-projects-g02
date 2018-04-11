@@ -19,7 +19,7 @@ entity RAM_TB is
 end RAM_TB;
 
 architecture behave of RAM_TB is
-	constant infile: string := "/home/hob/Desktop/raminfile";
+	constant infile: string := "D:\\os_lab\\OS2018spring-projects-g02\\utils\\inst.hex";
 	constant MEMSZ_DW: integer := 1024;
 
 	type t_mem is array(0 to MEMSZ_DW-1) of byte;
