@@ -16,8 +16,8 @@ package consts is
 	constant REG_SP_ADDR: reg_addr_t := "000000001";
 	constant REG_FP_ADDR: reg_addr_t := "000000010";
 	constant REG_ZR_ADDR: reg_addr_t := "000000011";
-	constant REG_FR_ADDR: reg_addr_t := "000000011";
-	constant REG_WR_ADDR: reg_addr_t := "000000011";
+	constant REG_FR_ADDR: reg_addr_t := "000000100";
+	constant REG_WR_ADDR: reg_addr_t := "000000101";
 
 
 	constant OPCODE_ADD: opcode_t := "00000";
@@ -27,7 +27,8 @@ package consts is
 	constant OPCODE_NOT: opcode_t := "00110";
 	constant OPCODE_SHR: opcode_t := "01001";
 	constant OPCODE_SHL: opcode_t := "01010";
-
+	
+	
 	constant BOOT_PC: mem_addr_t := x"00000000";
 
 	constant INST_NOP: inst_t := "00000" & REG_ZR_ADDR & REG_ZR_ADDR & REG_ZR_ADDR;

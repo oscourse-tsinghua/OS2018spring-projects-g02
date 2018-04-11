@@ -64,7 +64,7 @@ begin
 
 
 	ucpu_core:
-	entity work.CPU_CORE
+	CPU_CORE
 	port map (
 		clk_i=> clk,
 		rst_i=> rst,

@@ -109,7 +109,6 @@ begin
 				alu_op_o <= ALUOP_SHL;
 				regwr_en_o <= '1';
 				
-				
 			when others =>
 				fatal_o <= '1';
 		end case;
