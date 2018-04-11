@@ -6,27 +6,30 @@ use work.consts.ALL;
 
 entity litecpu is
 	port (
-		clk: in std_logic;
-		disp: out std_logic
+		clk_i: in std_logic;
+		rst_i: in std_logic
 	 );
 end litecpu;
 
 
 architecture behave of litecpu is
-	signal t_count: unsigned(21 downto 0) := (others=> '0');
-	signal l_disp: std_logic := '0';
-	constant KT_COUNT_ZERO: unsigned(21 downto 0) := (others=> '0');
+	signal ram_mode: rammode_t;
+	signal ram_addr: mem_addr_t;
+	signal ram_wdata: dword;
+	signal ram_rdata: dword;
+
 begin
 
-	disp <= l_disp;
-
-	process (clk) begin
-		if (rising_edge(clk)) then
-			t_count <= t_count + 1;
-			if (t_count = KT_COUNT_ZERO) then
-				l_disp <= not l_disp;
-			end if;
-		end if;
-	end process;
+--	ucpu_core:
+--	entity work.CPU_CORE
+--	port map (
+--		rst_i=> rst_i,
+--		clk_i=> clk_i,
+--
+--		ram_mode_o=> ram_mode,
+--		ram_addr_o=> ram_addr,
+--		ram_wdata_o=> ram_wdata,
+--		ram_rdata_i=> ram_rdata
+--	);
 
 end behave;

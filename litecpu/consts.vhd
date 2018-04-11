@@ -19,7 +19,13 @@ package consts is
 	constant REG_FR_ADDR: reg_addr_t := "000000011";
 	constant REG_WR_ADDR: reg_addr_t := "000000011";
 
+
 	constant OPCODE_ADD: opcode_t := "00000";
+
+
+	constant BOOT_PC: mem_addr_t := x"00000000";
+
+	constant INST_NOP: inst_t := "00000" & REG_ZR_ADDR & REG_ZR_ADDR & REG_ZR_ADDR;
 
 
 	type alu_op_t is (

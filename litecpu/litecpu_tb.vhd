@@ -12,10 +12,11 @@ architecture behave of litecpu_tb is
 	signal clk: std_logic := '0';
 	signal rst: std_logic := '1';
 
-	signal addr: mem_addr_t := x"00000004";
-	signal rdata: dword := (others=> '0');
-	signal wdata: dword := (others=> '0');
-	signal rammode: rammode_t := RAM_NOP;
+	signal addr: mem_addr_t;
+	signal rdata: dword;
+	signal wdata: dword;
+	signal rammode: rammode_t;
+
 
 	-- Don't know why but component must be used here
 	component RAM_TB is
@@ -30,13 +31,28 @@ architecture behave of litecpu_tb is
 		);
 	end component;
 
+
+	component CPU_CORE is
+		port (
+			rst_i: in std_logic;
+			clk_i: in std_logic; 
+
+			ram_mode_o: out rammode_t;
+			ram_addr_o: out mem_addr_t;
+			ram_wdata_o: out dword;
+			ram_rdata_i: in dword
+		);
+	end component;
+
+
 begin
 	clk <= not clk after 50ns;
 	rst <= '0' after 90ns;
 
+
 	uram:
 	RAM_TB
-	port map(
+	port map (
 		clk_i=> clk,
 		rst_i=> rst,
 
@@ -46,14 +62,17 @@ begin
 		mode_i=> rammode
 	);
 
-	process
-	begin
-		wait for 100ns;
-		rammode <= RAM_READ;
-		wait for 300ns;
-		rammode <= RAM_WRITE;
-		wdata <= x"55555555";
-		addr <= x"00000010";
-	end process;
+
+	ucpu_core:
+	entity work.CPU_CORE
+	port map (
+		clk_i=> clk,
+		rst_i=> rst,
+
+		ram_mode_o=> rammode,
+		ram_addr_o=> addr,
+		ram_wdata_o=> wdata,
+		ram_rdata_i=> rdata
+	);
 
 end behave;
