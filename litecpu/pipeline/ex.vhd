@@ -49,7 +49,9 @@ begin
 				alu_data_o <= to_stdlogicvector(to_bitvector(alu_v1_i) srl to_integer(unsigned(alu_v2_i)));
 			when ALUOP_SHL =>
 				alu_data_o <= to_stdlogicvector(to_bitvector(alu_v1_i) sll to_integer(unsigned(alu_v2_i)));
-			
+			when ALUOP_LL =>
+				alu_data_o <= alu_v1_i;
+				
 			when others =>
 				fatal_o <= '1';
 		end case;

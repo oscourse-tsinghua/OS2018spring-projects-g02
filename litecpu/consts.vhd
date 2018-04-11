@@ -27,6 +27,7 @@ package consts is
 	constant OPCODE_NOT: opcode_t := "00110";
 	constant OPCODE_SHR: opcode_t := "01001";
 	constant OPCODE_SHL: opcode_t := "01010";
+	constant OPCODE_LL:  opcode_t := "01101";
 	
 	
 	constant BOOT_PC: mem_addr_t := x"00000000";
@@ -41,7 +42,8 @@ package consts is
 		ALUOP_OR,
 		ALUOP_NOT,
 		ALUOP_SHR,
-		ALUOP_SHL
+		ALUOP_SHL,
+		ALUOP_LL
 	);
 
 

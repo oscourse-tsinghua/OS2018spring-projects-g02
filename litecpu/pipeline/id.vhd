@@ -109,6 +109,12 @@ begin
 				alu_op_o <= ALUOP_SHL;
 				regwr_en_o <= '1';
 				
+			when OPCODE_LL => 
+				alu_v1_o <= x"0000" & liimm;
+				alu_v2_o <= reg2_data_i;
+				alu_op_o <= ALUOP_LL;
+				regwr_en_o <= '1';
+				
 			when others =>
 				fatal_o <= '1';
 		end case;

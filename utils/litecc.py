@@ -28,6 +28,11 @@ def general_xyz(opcode, rx, ry, rz):
     binrep = t(opcode, 5) + t(rx, 9) + t(ry, 9) + t(rz, 9)
     return hex(int(binrep,2))[2:].rjust(8, '0')
 
+def general_ll(rx, liimm):
+    t = lambda x, n: bin(x)[2:].rjust(n, '0')
+    binrep = t(13, 5) + t(rx, 9) + t(0, 2)
+    return (hex(int(binrep, 2))[2:]+liimm).rjust(8, '0')
+    
 def _add(inst):
     toks = inst.strip().split()[1:]
     rx = reg2rn(toks[0])
@@ -77,6 +82,11 @@ def _shl(inst):
     rz = reg2rn("PC")
     return general_xyz(10, rx, ry, rz)
 
+def _ll(inst):
+    toks = inst.strip().split()[1:]
+    rx = reg2rn(toks[0])
+    liimm = toks[1][2:]
+    return general_ll(rx, liimm)
     
 with open("inst.l2", "r") as fin, open("inst.hex", "w") as fout:
     for l in fin:
