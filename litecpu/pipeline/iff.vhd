@@ -28,7 +28,6 @@ begin
 	process (clk_i)
 	begin
 		if (rising_edge(clk_i)) then
-			pc <= (others=> '0');
 			active_o <= '0';
 
 			if (rst_i = '1') then
@@ -42,6 +41,7 @@ begin
 				end if;
 				active_o <= '1';
 			end if;
+			-- else: pc should not change
 		end if;
 	end process;
 

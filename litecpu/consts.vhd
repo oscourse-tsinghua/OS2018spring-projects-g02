@@ -16,8 +16,8 @@ package consts is
 	constant REG_SP_ADDR: reg_addr_t := "000000001";
 	constant REG_FP_ADDR: reg_addr_t := "000000010";
 	constant REG_ZR_ADDR: reg_addr_t := "000000011";
-	constant REG_FR_ADDR: reg_addr_t := "000000011";
-	constant REG_WR_ADDR: reg_addr_t := "000000011";
+	constant REG_FR_ADDR: reg_addr_t := "000000100";
+	constant REG_WR_ADDR: reg_addr_t := "000000101";
 
 
 	constant OPCODE_ADD: opcode_t := "00000";

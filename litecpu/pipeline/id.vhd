@@ -45,9 +45,9 @@ begin
 	boffset <= r3_addr;
 	liimm <= inst_i(15 downto 0);
 
-	reg1_addr_o <= r1_addr;
-	reg2_addr_o <= r2_addr;
-	regwr_addr_o <= r3_addr;
+	reg1_addr_o <= r2_addr;
+	reg2_addr_o <= r3_addr;
+	regwr_addr_o <= r1_addr;
 
 	process (all)
 	begin
