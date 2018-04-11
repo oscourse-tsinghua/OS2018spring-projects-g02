@@ -41,6 +41,8 @@ synthesis/
 timing/
 testbench/
 *_sim/
+output_files/
 
 #user preferences
 .qsys_edit/
+
