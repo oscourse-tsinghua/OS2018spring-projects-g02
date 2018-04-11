@@ -45,10 +45,18 @@ begin
 	boffset <= r3_addr;
 	liimm <= inst_i(15 downto 0);
 
-	reg1_addr_o <= r1_addr;
-	reg2_addr_o <= r2_addr;
+	process (all)
+	begin
+		if (opcode = OPCODE_SHR or opcode = OPCODE_SHL) then
+			reg1_addr_o <= r3_addr;
+			reg2_addr_o <= r1_addr;
+		else
+			reg1_addr_o <= r1_addr;
+			reg2_addr_o <= r2_addr;
+		end if;
+	end process;
 	regwr_addr_o <= r3_addr;
-
+	
 	process (all)
 	begin
 		-- default values
@@ -82,6 +90,25 @@ begin
 				alu_v2_o <= reg2_data_i;
 				alu_op_o <= ALUOP_OR;
 				regwr_en_o <= '1';
+				
+			when OPCODE_NOT =>
+				alu_v1_o <= reg1_data_i;
+				alu_v2_o <= reg2_data_i; -- unused parameter, but set consistent with others to save resources
+				alu_op_o <= ALUOP_NOT;
+				regwr_en_o <= '1';
+				
+			when OPCODE_SHR =>
+				alu_v1_o <= reg1_data_i;
+				alu_v2_o <= reg2_data_i;
+				alu_op_o <= ALUOP_SHR;
+				regwr_en_o <= '1';
+				
+			when OPCODE_SHL =>
+				alu_v1_o <= reg1_data_i;
+				alu_v2_o <= reg2_data_i;
+				alu_op_o <= ALUOP_SHL;
+				regwr_en_o <= '1';
+				
 				
 			when others =>
 				fatal_o <= '1';

@@ -43,6 +43,12 @@ begin
 				alu_data_o <= alu_v1_i and alu_v2_i;
 			when ALUOP_OR =>
 				alu_data_o <= alu_v1_i or alu_v2_i;
+			when ALUOP_NOT =>
+				alu_data_o <= not alu_v1_i;
+			when ALUOP_SHR =>
+				alu_data_o <= to_stdlogicvector(to_bitvector(alu_v1_i) srl to_integer(unsigned(alu_v2_i)));
+			when ALUOP_SHL =>
+				alu_data_o <= to_stdlogicvector(to_bitvector(alu_v1_i) sll to_integer(unsigned(alu_v2_i)));
 			
 			when others =>
 				fatal_o <= '1';
