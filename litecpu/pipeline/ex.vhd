@@ -37,7 +37,13 @@ begin
 		case alu_op_i is
 			when ALUOP_ADD =>
 				alu_data_o <= std_logic_vector(unsigned(alu_v1_i) + unsigned(alu_v2_i));
-
+			when ALUOP_SUB =>
+				alu_data_o <= std_logic_vector(unsigned(alu_v1_i) - unsigned(alu_v2_i));
+			when ALUOP_AND =>
+				alu_data_o <= alu_v1_i and alu_v2_i;
+			when ALUOP_OR =>
+				alu_data_o <= alu_v1_i or alu_v2_i;
+			
 			when others =>
 				fatal_o <= '1';
 		end case;

@@ -42,7 +42,7 @@ begin
 			if ((rst_i = '1') or (active_i = '0')) then
 				alu_v1_o <= (others=> '0');
 				alu_v2_o <= (others=> '0');
-				alu_op_o <= ALUOP_ADD;
+				alu_op_o <= ALUOP_ADD;	-- ALUOP_NOP in fact, but ALUOP_ADD can save resources.
 
 				regwr_addr_o <= (others=> '0');
 				regwr_en_o <= '0';

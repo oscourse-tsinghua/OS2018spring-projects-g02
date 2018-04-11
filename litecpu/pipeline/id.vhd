@@ -39,9 +39,9 @@ begin
 
 
 	opcode <= inst_i(31 downto 27);
-	r1_addr <= inst_i(26 downto 18);
-	r2_addr <= inst_i(17 downto 9);
-	r3_addr <= inst_i(8 downto 0);
+	r3_addr <= inst_i(26 downto 18);
+	r1_addr <= inst_i(17 downto 9);
+	r2_addr <= inst_i(8 downto 0);
 	boffset <= r3_addr;
 	liimm <= inst_i(15 downto 0);
 
@@ -65,6 +65,24 @@ begin
 				alu_op_o <= ALUOP_ADD;
 				regwr_en_o <= '1';
 
+			when OPCODE_SUB =>
+				alu_v1_o <= reg1_data_i;
+				alu_v2_o <= reg2_data_i;
+				alu_op_o <= ALUOP_SUB;
+				regwr_en_o <= '1';
+				
+			when OPCODE_AND =>
+				alu_v1_o <= reg1_data_i;
+				alu_v2_o <= reg2_data_i;
+				alu_op_o <= ALUOP_AND;
+				regwr_en_o <= '1';
+				
+			when OPCODE_OR =>
+				alu_v1_o <= reg1_data_i;
+				alu_v2_o <= reg2_data_i;
+				alu_op_o <= ALUOP_OR;
+				regwr_en_o <= '1';
+				
 			when others =>
 				fatal_o <= '1';
 		end case;

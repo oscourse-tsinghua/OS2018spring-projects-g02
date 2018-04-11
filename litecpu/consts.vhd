@@ -21,7 +21,9 @@ package consts is
 
 
 	constant OPCODE_ADD: opcode_t := "00000";
-
+	constant OPCODE_SUB: opcode_t := "00001";
+	constant OPCODE_AND: opcode_t := "00100";
+	constant OPCODE_OR:  opcode_t := "00101";
 
 	constant BOOT_PC: mem_addr_t := x"00000000";
 
@@ -29,7 +31,10 @@ package consts is
 
 
 	type alu_op_t is (
-		ALUOP_ADD
+		ALUOP_ADD,
+		ALUOP_SUB,
+		ALUOP_AND,
+		ALUOP_OR
 	);
 
 
