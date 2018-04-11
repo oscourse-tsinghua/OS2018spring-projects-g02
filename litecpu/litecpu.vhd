@@ -6,7 +6,7 @@ using IEEE.NUMERIC_STD.ALL;
 entity litecpu
 	port (
 		dummy: out std_logic
-	)
+	);
 end litecpu;
 
 architecture behave of litecpu is
