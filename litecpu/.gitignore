@@ -1,0 +1,46 @@
+# ignore Quartus II generated files
+*sopc_*
+*.jdi
+*.ptf.*
+*.sof
+*.pof
+*.qws
+*.smsg
+*_inst.vhd
+*_generation_script*
+*.done
+*.qarlog
+*.rpt
+*.summary
+*.qws
+*.cmp
+*.eqn
+*.html
+*.qar
+*.sopc_builder
+# *example*
+*~
+*.sdc
+*.tcl
+*.pin
+*.mif
+*.hex
+*_tb.csv
+*_tb.spd
+*.ddb
+*.bak
+*_dump.txt
+*_INFO.txt
+*_netlist
+
+# ignore Quartus II generated folders
+db/
+incremental_db/
+simulation/
+synthesis/
+timing/
+testbench/
+*_sim/
+
+#user preferences
+.qsys_edit/
