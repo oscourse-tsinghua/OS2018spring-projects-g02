@@ -15,7 +15,10 @@ entity MEM is
 		regwr_en_i: in std_logic;
 		regwr_en_o: out std_logic;
 
-		regwr_data_o: out dword
+		regwr_data_o: out dword;
+		
+		ram_mode_i: in rammode_t;
+		ramRData_i: in dword
 	);
 end MEM;
 
@@ -34,7 +37,11 @@ begin
 		-- watchout for active_i here!
 		fatal_o <= '0';
 
-		regwr_data_o <= alu_data_i;
+		if (ram_mode_i = RAM_READ) then
+			regwr_data_o <= ramRData_i;
+		else
+			regwr_data_o <= alu_data_i;
+		end if;
 	end process;
 
 end behave;

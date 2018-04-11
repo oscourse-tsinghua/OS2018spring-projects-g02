@@ -16,11 +16,15 @@ entity EX_MEM is
 		regwr_addr_i: in reg_addr_t;
 		alu_data_i: in dword;
 
+		ram_mode_i: in rammode_t;
+		
 		--
 
 		regwr_en_o: out std_logic;
 		regwr_addr_o: out reg_addr_t;
-		alu_data_o: out dword
+		alu_data_o: out dword;
+		
+		ram_mode_o: out rammode_t
 	);
 end EX_MEM;
 
@@ -39,6 +43,7 @@ begin
 				regwr_addr_o <= (others=> '0');
 				alu_data_o <= (others=> '0');
 				active_o <= '0';
+				ram_mode_o <= RAM_NOP;
 
 			else
 
@@ -46,6 +51,7 @@ begin
 				regwr_addr_o <= regwr_addr_i;
 				alu_data_o <= alu_data_i;
 				active_o <= '1';
+				ram_mode_o <= ram_mode_i;
 			end if;
 		end if;
 	end process;

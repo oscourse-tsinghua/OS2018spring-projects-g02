@@ -14,7 +14,11 @@ entity RAM_TB is
 		mode_i: in rammode_t;
 		addr_i: in mem_addr_t;
 		rdata_o: out dword;
-		wdata_i: in dword
+		wdata_i: in dword;
+		
+		MEMMode_i: in rammode_t;
+		MEMAddr_i: in mem_addr_t;
+		MEMRData_o: out dword
 	);
 end RAM_TB;
 
@@ -87,6 +91,22 @@ begin
 						 & mem(ad0);
 			when others=>
 				rdata_o <= (others=> 'Z');
+		end case;
+	end process;
+	
+	-- read for MEM
+	process (all)
+		variable ad1: integer;
+	begin
+		ad1 := to_integer(unsigned(MEMAddr_i));
+		case MEMMode_i is
+			when RAM_READ =>
+				MEMRData_o <= mem(ad1 + 3)
+						 & mem(ad1 + 2)
+						 & mem(ad1 + 1)
+						 & mem(ad1);
+			when others=>
+				MEMRData_o <= (others=> 'Z');
 		end case;
 	end process;
 

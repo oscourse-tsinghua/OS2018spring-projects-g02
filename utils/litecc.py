@@ -68,6 +68,13 @@ def _not(inst):
     rz = reg2rn("PC")
     return general_xyz(6, rx, ry, rz)
     
+def _loa(inst):
+    toks = inst.strip().split()[1:]
+    rx = reg2rn(toks[0])
+    ry = reg2rn(toks[1])
+    rz = reg2rn("PC")
+    return general_xyz(7, rx, ry, rz)
+    
 def _shr(inst):
     toks = inst.strip().split()[1:]
     rx = reg2rn(toks[0])

@@ -25,6 +25,7 @@ package consts is
 	constant OPCODE_AND: opcode_t := "00100";
 	constant OPCODE_OR:  opcode_t := "00101";
 	constant OPCODE_NOT: opcode_t := "00110";
+	constant OPCODE_LOA: opcode_t := "00111";
 	constant OPCODE_SHR: opcode_t := "01001";
 	constant OPCODE_SHL: opcode_t := "01010";
 	constant OPCODE_LL:  opcode_t := "01101";
@@ -41,6 +42,7 @@ package consts is
 		ALUOP_AND,
 		ALUOP_OR,
 		ALUOP_NOT,
+		ALUOP_LOA,
 		ALUOP_SHR,
 		ALUOP_SHL,
 		ALUOP_LL
