@@ -8,7 +8,7 @@ entity ID_EX is
 	port (
 		clk_i: in std_logic;
 		rst_i: in std_logic;
-	
+
 		active_i: in std_logic;
 		active_o: out std_logic;
 
@@ -18,23 +18,27 @@ entity ID_EX is
 		alu_v2_i: in dword;
 		alu_op_i: in alu_op_t;
 
-		regwr_addr_i: in reg_addr_t;		
+		regwr_addr_i: in reg_addr_t;
 		regwr_en_i: in std_logic;
 
+		jb_en_i: in std_logic;
+
 		ram_mode_i: in rammode_t;
-		ramWData_i: in dword;
-		
+		ram_wdata_i: in dword;
+
 		--
 
 		alu_v1_o: out dword;
 		alu_v2_o: out dword;
 		alu_op_o: out alu_op_t;
 
-		regwr_addr_o: out reg_addr_t;		
+		regwr_addr_o: out reg_addr_t;
 		regwr_en_o: out std_logic;
-		
+
+		jb_en_o: out std_logic;
+
 		ram_mode_o: out rammode_t;
-		ramWData_o: out dword
+		ram_wdata_o: out dword
 	);
 end ID_EX;
 
@@ -52,12 +56,13 @@ begin
 
 				regwr_addr_o <= (others=> '0');
 				regwr_en_o <= '0';
-				
-				active_o <= '0';
-				
-				ram_mode_o <= RAM_NOP;
-				ramWData_o <= (others=> '0');
 
+				active_o <= '0';
+
+				ram_mode_o <= RAM_NOP;
+				ram_wdata_o <= (others=> '0');
+
+				jb_en_o <= '0';
 			else
 
 				alu_v1_o <= alu_v1_i;
@@ -67,10 +72,12 @@ begin
 				regwr_addr_o <= regwr_addr_i;
 				regwr_en_o <= regwr_en_i;
 
+				jb_en_o <= jb_en_i;
+
 				active_o <= '1';
-				
+
 				ram_mode_o <= ram_mode_i;
-				ramWData_o <= ramWData_i;
+				ram_wdata_o <= ram_wdata_i;
 			end if;
 		end if;
 	end process;

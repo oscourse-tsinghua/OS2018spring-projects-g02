@@ -18,11 +18,17 @@ entity MEM_WB is
 		regwr_en_i: in std_logic;
 		regwr_data_i: in dword;
 
+		jb_en_i: in std_logic;
+		jb_pc_i: in mem_addr_t;
+
 		--
 
 		regwr_addr_o: out reg_addr_t;
 		regwr_en_o: out std_logic;
-		regwr_data_o: out dword
+		regwr_data_o: out dword;
+
+		jb_en_o: out std_logic;
+		jb_pc_o: out mem_addr_t
 	);
 end MEM_WB;
 
@@ -37,6 +43,8 @@ begin
 			regwr_en_o <= '0';
 			regwr_data_o <= (others=> '0');
 			active_o <= '0';
+			jb_en_o <= '0';
+			jb_pc_o <= (others=> '0');
 
 			if ((rst_i = '1') or (active_i = '0')) then
 				null;
@@ -44,6 +52,8 @@ begin
 				regwr_addr_o <= regwr_addr_i;
 				regwr_en_o <= regwr_en_i;
 				regwr_data_o <= regwr_data_i;
+				jb_en_o <= jb_en_i;
+				jb_pc_o <= jb_pc_i;
 				active_o <= '1';
 			end if;
 		end if;

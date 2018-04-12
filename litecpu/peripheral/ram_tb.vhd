@@ -15,7 +15,7 @@ entity RAM_TB is
 		addr_i: in mem_addr_t;
 		rdata_o: out dword;
 		wdata_i: in dword;
-		
+
 		MEMMode_i: in rammode_t;
 		MEMAddr_i: in mem_addr_t;
 		MEMRData_o: out dword;
@@ -24,7 +24,7 @@ entity RAM_TB is
 end RAM_TB;
 
 architecture behave of RAM_TB is
-	constant infile: string := "D:\\os_lab\\OS2018spring-projects-g02\\utils\\inst.hex";
+	constant infile: string := "/home/hob/Desktop/raminfile";
 	constant MEMSZ_DW: integer := 1024;
 
 	type t_mem is array(0 to MEMSZ_DW-1) of byte;
@@ -105,7 +105,7 @@ begin
 				rdata_o <= (others=> 'Z');
 		end case;
 	end process;
-	
+
 	-- read for MEM
 	process (all)
 		variable ad1: integer;

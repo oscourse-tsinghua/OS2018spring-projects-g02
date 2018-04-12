@@ -29,12 +29,14 @@ package consts is
 	constant OPCODE_STO: opcode_t := "01000";
 	constant OPCODE_SHR: opcode_t := "01001";
 	constant OPCODE_SHL: opcode_t := "01010";
+	constant OPCODE_BEQ: opcode_t := "01011";
+	constant OPCODE_BLT: opcode_t := "01100";
 	constant OPCODE_LL:  opcode_t := "01101";
-	
-	
+
+
 	constant BOOT_PC: mem_addr_t := x"00000000";
 
-	constant INST_NOP: inst_t := "00000" & REG_ZR_ADDR & REG_ZR_ADDR & REG_ZR_ADDR;
+	constant INST_NOP: inst_t := OPCODE_ADD & REG_ZR_ADDR & REG_ZR_ADDR & REG_ZR_ADDR;
 
 
 	type alu_op_t is (
