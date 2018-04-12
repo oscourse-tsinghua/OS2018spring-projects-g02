@@ -16,11 +16,17 @@ entity EX_MEM is
 		regwr_addr_i: in reg_addr_t;
 		alu_data_i: in dword;
 
+		jb_en_i: std_logic;
+		jb_pc_i: mem_addr_t;
+
 		--
 
 		regwr_en_o: out std_logic;
 		regwr_addr_o: out reg_addr_t;
-		alu_data_o: out dword
+		alu_data_o: out dword;
+
+		jb_en_o: out std_logic;
+		jb_pc_o: out mem_addr_t
 	);
 end EX_MEM;
 
@@ -40,12 +46,17 @@ begin
 				alu_data_o <= (others=> '0');
 				active_o <= '0';
 
+				jb_en_o <= '0';
+				jb_pc_o <= (others=> '0');
 			else
 
 				regwr_en_o <= regwr_en_i;
 				regwr_addr_o <= regwr_addr_i;
 				alu_data_o <= alu_data_i;
 				active_o <= '1';
+
+				jb_en_o <= jb_en_i;
+				jb_pc_o <= jb_pc_i;
 			end if;
 		end if;
 	end process;

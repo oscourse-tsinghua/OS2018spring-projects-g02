@@ -23,16 +23,20 @@ entity ID is
 		alu_op_o: out alu_op_t;
 
 		regwr_addr_o: out reg_addr_t;
-		regwr_en_o: out std_logic
+		regwr_en_o: out std_logic;
+
+		jb_en_o: out std_logic;
+		jb_pc_o: out mem_addr_t
 	);
 end ID;
+
 
 architecture behave of ID is
 	signal opcode: opcode_t;
 	signal r1_addr: reg_addr_t;
 	signal r2_addr: reg_addr_t;
 	signal r3_addr: reg_addr_t;
-	signal boffset: std_logic_vector(8 downto 0); -- branch offset
+	signal boffset: mem_addr_t; -- branch offset
 	signal liimm: std_logic_vector(15 downto 0);  -- imm of load imm
 
 begin
@@ -42,12 +46,13 @@ begin
 	r3_addr <= inst_i(26 downto 18);
 	r1_addr <= inst_i(17 downto 9);
 	r2_addr <= inst_i(8 downto 0);
-	boffset <= r3_addr;
+	boffset <= sign_extend(r2_addr)(29 downto 0) & "00";
 	liimm <= inst_i(15 downto 0);
+
 
 	process (all)
 	begin
-		if (opcode = OPCODE_SHR or opcode = OPCODE_SHL) then
+		if (opcode = OPCODE_SHR or opcode = OPCODE_SHL or OPCODE = OPCODE_BEQ or OPCODE = OPCODE_BLT) then
 			reg1_addr_o <= r3_addr;
 			reg2_addr_o <= r1_addr;
 		else
@@ -56,7 +61,7 @@ begin
 		end if;
 	end process;
 	regwr_addr_o <= r3_addr;
-	
+
 	process (all)
 	begin
 		-- default values
@@ -65,6 +70,8 @@ begin
 		alu_v2_o <= (others=> '0');
 		alu_op_o <= ALUOP_ADD;
 		regwr_en_o <= '0';
+		jb_en_o <= '0';
+		jb_pc_o <= (others=> '0');
 
 		case opcode is
 			when OPCODE_ADD =>
@@ -78,37 +85,54 @@ begin
 				alu_v2_o <= reg2_data_i;
 				alu_op_o <= ALUOP_SUB;
 				regwr_en_o <= '1';
-				
+
 			when OPCODE_AND =>
 				alu_v1_o <= reg1_data_i;
 				alu_v2_o <= reg2_data_i;
 				alu_op_o <= ALUOP_AND;
 				regwr_en_o <= '1';
-				
+
 			when OPCODE_OR =>
 				alu_v1_o <= reg1_data_i;
 				alu_v2_o <= reg2_data_i;
 				alu_op_o <= ALUOP_OR;
 				regwr_en_o <= '1';
-				
+
 			when OPCODE_NOT =>
 				alu_v1_o <= reg1_data_i;
-				alu_v2_o <= reg2_data_i; -- unused parameter, but set consistent with others to save resources
+				alu_v2_o <= reg2_data_i; -- unused, for resources
 				alu_op_o <= ALUOP_NOT;
 				regwr_en_o <= '1';
-				
+
 			when OPCODE_SHR =>
 				alu_v1_o <= reg1_data_i;
 				alu_v2_o <= reg2_data_i;
 				alu_op_o <= ALUOP_SHR;
 				regwr_en_o <= '1';
-				
+
 			when OPCODE_SHL =>
 				alu_v1_o <= reg1_data_i;
 				alu_v2_o <= reg2_data_i;
 				alu_op_o <= ALUOP_SHL;
 				regwr_en_o <= '1';
-				
+
+			-- TODO: merge bxx so only 1 adder will be used
+			when OPCODE_BEQ =>
+				if (reg1_data_i = reg2_data_i) then
+					jb_en_o <= '1';
+					jb_pc_o <= std_logic_vector(unsigned(pc_i)
+							   + 4 + unsigned(boffset));
+				end if;
+
+			-- unsigned comparison here: refer to emulators
+			when OPCODE_BLT =>
+				if (unsigned(reg1_data_i) < unsigned(reg2_data_i)) then
+					jb_en_o <= '1';
+					jb_pc_o <= std_logic_vector(unsigned(pc_i)
+							   + 4 + unsigned(boffset));
+				end if;
+
+
 			when others =>
 				fatal_o <= '1';
 		end case;

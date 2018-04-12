@@ -35,6 +35,8 @@ architecture behave of CPU_CORE is
 	signal id_alu_v1_o: dword;
 	signal id_alu_v2_o: dword;
 	signal id_alu_op_o: alu_op_t;
+	signal id_jb_en_o: std_logic;
+	signal id_jb_pc_o: mem_addr_t;
 
 	signal ex_active_i: std_logic;
 	signal ex_alu_v1_i: dword;
@@ -46,6 +48,8 @@ architecture behave of CPU_CORE is
 	signal ex_regwr_en_o: std_logic;
 	signal ex_regwr_addr_o: reg_addr_t;
 	signal ex_alu_data_o: dword;
+	signal ex_jb_en_i: std_logic;
+	signal ex_jb_pc_i: mem_addr_t;
 
 	signal mem_active_i: std_logic;
 	signal mem_regwr_en_i: std_logic;
@@ -55,11 +59,15 @@ architecture behave of CPU_CORE is
 	signal mem_regwr_addr_o: reg_addr_t;
 	signal mem_regwr_en_o: std_logic;
 	signal mem_regwr_data_o: dword;
+	signal mem_jb_en_i: std_logic;
+	signal mem_jb_pc_i: mem_addr_t;
 
 	signal wb_regwr_en_i: std_logic;
 	signal wb_regwr_addr_i: reg_addr_t;
 	signal wb_regwr_data_i: dword;
 	signal wb_active_i: std_logic;
+	signal wb_jb_en_i: std_logic;
+	signal wb_jb_pc_i: mem_addr_t;
 
 begin
 	if_inst <= ram_rdata_i;
@@ -95,8 +103,8 @@ begin
 
 		active_o=> if_active_i,
 
-		jb_pc_i=> (others=> '0'),
-		jb_en_i=> '0',
+		jb_en_i=> wb_jb_en_i,
+		jb_pc_i=> wb_jb_pc_i,
 
 		pc_o=> if_pc_o
 	);
@@ -139,7 +147,10 @@ begin
 		alu_op_o=> id_alu_op_o,
 
 		regwr_addr_o=> id_regwr_addr_o,
-		regwr_en_o=> id_regwr_en_o
+		regwr_en_o=> id_regwr_en_o,
+
+		jb_en_o=> id_jb_en_o,
+		jb_pc_o=> id_jb_pc_o
 	);
 
 
@@ -157,12 +168,16 @@ begin
 		alu_op_i=> id_alu_op_o,
 		regwr_addr_i=> id_regwr_addr_o,
 		regwr_en_i=> id_regwr_en_o,
+		jb_en_i=> id_jb_en_o,
+		jb_pc_i=> id_jb_pc_o,
 
 		alu_v1_o=> ex_alu_v1_i,
 		alu_v2_o=> ex_alu_v2_i,
 		alu_op_o=> ex_alu_op_i,
 		regwr_addr_o=> ex_regwr_addr_i,
-		regwr_en_o=> ex_regwr_en_i
+		regwr_en_o=> ex_regwr_en_i,
+		jb_en_o=> ex_jb_en_i,
+		jb_pc_o=> ex_jb_pc_i
 	);
 
 
@@ -196,10 +211,14 @@ begin
 		regwr_en_i=> ex_regwr_en_o,
 		regwr_addr_i=> ex_regwr_addr_o,
 		alu_data_i=> ex_alu_data_o,
+		jb_en_i=> ex_jb_en_i,
+		jb_pc_i=> ex_jb_pc_i,
 
 		regwr_en_o=> mem_regwr_en_i,
 		regwr_addr_o=> mem_regwr_addr_i,
-		alu_data_o=> mem_alu_data_i
+		alu_data_o=> mem_alu_data_i,
+		jb_en_o=> mem_jb_en_i,
+		jb_pc_o=> mem_jb_pc_i
 	);
 
 
@@ -218,6 +237,7 @@ begin
 		regwr_data_o=> mem_regwr_data_o
 	);
 
+
 	umem_wb:
 	entity work.MEM_WB
 	port map (
@@ -230,10 +250,14 @@ begin
 		regwr_addr_i=> mem_regwr_addr_o,
 		regwr_en_i=> mem_regwr_en_o,
 		regwr_data_i=> mem_regwr_data_o,
+		jb_en_i=> mem_jb_en_i,
+		jb_pc_i=> mem_jb_pc_i,
 
 		regwr_addr_o=> wb_regwr_addr_i,
 		regwr_en_o=> wb_regwr_en_i,
-		regwr_data_o=> wb_regwr_data_i
+		regwr_data_o=> wb_regwr_data_i,
+		jb_en_o=> wb_jb_en_i,
+		jb_pc_o=> wb_jb_pc_i
 	);
 
 end behave;
