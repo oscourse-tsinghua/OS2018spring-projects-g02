@@ -11,7 +11,11 @@ entity CPU_CORE is
 		ram_mode_o: out rammode_t;
 		ram_addr_o: out mem_addr_t;
 		ram_wdata_o: out dword;
-		ram_rdata_i: in dword
+		ram_rdata_i: in dword;
+		
+		MEMMode_o: out rammode_t;
+		MEMAddr_o: out mem_addr_t;
+		MEMRData_i: in dword
 	);
 end CPU_CORE;
 
@@ -37,6 +41,7 @@ architecture behave of CPU_CORE is
 	signal id_alu_op_o: alu_op_t;
 	signal id_jb_en_o: std_logic;
 	signal id_jb_pc_o: mem_addr_t;
+	signal id_ram_mode_o: rammode_t;
 
 	signal ex_active_i: std_logic;
 	signal ex_alu_v1_i: dword;
@@ -50,7 +55,9 @@ architecture behave of CPU_CORE is
 	signal ex_alu_data_o: dword;
 	signal ex_jb_en_i: std_logic;
 	signal ex_jb_pc_i: mem_addr_t;
-
+	signal ex_ram_mode_i: rammode_t;
+	signal ex_ram_mode_o: rammode_t;
+	
 	signal mem_active_i: std_logic;
 	signal mem_regwr_en_i: std_logic;
 	signal mem_regwr_addr_i: reg_addr_t;
@@ -61,6 +68,7 @@ architecture behave of CPU_CORE is
 	signal mem_regwr_data_o: dword;
 	signal mem_jb_en_i: std_logic;
 	signal mem_jb_pc_i: mem_addr_t;
+	signal mem_ram_mode_i: rammode_t;
 
 	signal wb_regwr_en_i: std_logic;
 	signal wb_regwr_addr_i: reg_addr_t;
@@ -75,6 +83,8 @@ begin
 	ram_addr_o <= if_pc_o;
 	ram_wdata_o <= (others=> '0'); -- never write ram now
 
+	MEMMode_o <= mem_ram_mode_i;
+	MEMAddr_o <= mem_alu_data_i;
 
 	uregs:
 	entity work.REGS
@@ -150,7 +160,9 @@ begin
 		regwr_en_o=> id_regwr_en_o,
 
 		jb_en_o=> id_jb_en_o,
-		jb_pc_o=> id_jb_pc_o
+		jb_pc_o=> id_jb_pc_o,
+		
+		ram_mode_o=> id_ram_mode_o
 	);
 
 
@@ -176,8 +188,12 @@ begin
 		alu_op_o=> ex_alu_op_i,
 		regwr_addr_o=> ex_regwr_addr_i,
 		regwr_en_o=> ex_regwr_en_i,
+
 		jb_en_o=> ex_jb_en_i,
-		jb_pc_o=> ex_jb_pc_i
+		jb_pc_o=> ex_jb_pc_i,
+		
+		ram_mode_i=> id_ram_mode_o,
+		ram_mode_o=> ex_ram_mode_i
 	);
 
 
@@ -195,7 +211,10 @@ begin
 		regwr_addr_i=> ex_regwr_addr_i,
 		regwr_addr_o=> ex_regwr_addr_o,
 
-		alu_data_o=> ex_alu_data_o
+		alu_data_o=> ex_alu_data_o,
+		
+		ram_mode_i=> ex_ram_mode_i,
+		ram_mode_o=> ex_ram_mode_o
 	);
 
 
@@ -217,8 +236,12 @@ begin
 		regwr_en_o=> mem_regwr_en_i,
 		regwr_addr_o=> mem_regwr_addr_i,
 		alu_data_o=> mem_alu_data_i,
+
 		jb_en_o=> mem_jb_en_i,
-		jb_pc_o=> mem_jb_pc_i
+		jb_pc_o=> mem_jb_pc_i,
+		
+		ram_mode_i=> ex_ram_mode_o,
+		ram_mode_o=> mem_ram_mode_i
 	);
 
 
@@ -234,7 +257,10 @@ begin
 		regwr_addr_o=> mem_regwr_addr_o,
 		regwr_en_i=> mem_regwr_en_i,
 		regwr_en_o=> mem_regwr_en_o,
-		regwr_data_o=> mem_regwr_data_o
+		regwr_data_o=> mem_regwr_data_o,
+		
+		ram_mode_i=> mem_ram_mode_i,
+		ramRData_i=> MEMRData_i
 	);
 
 

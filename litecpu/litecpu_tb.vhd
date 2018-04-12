@@ -17,6 +17,9 @@ architecture behave of litecpu_tb is
 	signal wdata: dword;
 	signal rammode: rammode_t;
 
+	signal MEMMode: rammode_t;
+	signal MEMAddr: mem_addr_t;
+	signal MEMRData: dword;
 
 	-- Don't know why but component must be used here
 	component RAM_TB is
@@ -27,7 +30,11 @@ architecture behave of litecpu_tb is
 			mode_i: in rammode_t;
 			addr_i: in mem_addr_t;
 			rdata_o: out dword;
-			wdata_i: in dword
+			wdata_i: in dword;
+				
+			MEMMode_i: in rammode_t;
+			MEMAddr_i: in mem_addr_t;
+			MEMRData_o: out dword
 		);
 	end component;
 
@@ -40,7 +47,11 @@ architecture behave of litecpu_tb is
 			ram_mode_o: out rammode_t;
 			ram_addr_o: out mem_addr_t;
 			ram_wdata_o: out dword;
-			ram_rdata_i: in dword
+			ram_rdata_i: in dword;
+				
+			MEMMode_o: out rammode_t;
+			MEMAddr_o: out mem_addr_t;
+			MEMRData_i: in dword
 		);
 	end component;
 
@@ -59,7 +70,11 @@ begin
 		addr_i=> addr,
 		rdata_o=> rdata,
 		wdata_i=> wdata,
-		mode_i=> rammode
+		mode_i=> rammode,
+		
+		MEMMode_i => MEMMode,
+		MEMAddr_i => MEMAddr,
+		MEMRData_o => MEMRData
 	);
 
 
@@ -72,7 +87,11 @@ begin
 		ram_mode_o=> rammode,
 		ram_addr_o=> addr,
 		ram_wdata_o=> wdata,
-		ram_rdata_i=> rdata
+		ram_rdata_i=> rdata,
+		
+		MEMMode_o => MEMMode,
+		MEMAddr_o => MEMAddr,
+		MEMRData_i => MEMRData
 	);
 
 end behave;
