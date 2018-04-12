@@ -22,6 +22,7 @@ entity ID_EX is
 		regwr_en_i: in std_logic;
 
 		ram_mode_i: in rammode_t;
+		ramWData_i: in dword;
 		
 		--
 
@@ -32,7 +33,8 @@ entity ID_EX is
 		regwr_addr_o: out reg_addr_t;		
 		regwr_en_o: out std_logic;
 		
-		ram_mode_o: out rammode_t
+		ram_mode_o: out rammode_t;
+		ramWData_o: out dword
 	);
 end ID_EX;
 
@@ -50,8 +52,11 @@ begin
 
 				regwr_addr_o <= (others=> '0');
 				regwr_en_o <= '0';
+				
 				active_o <= '0';
+				
 				ram_mode_o <= RAM_NOP;
+				ramWData_o <= (others=> '0');
 
 			else
 
@@ -65,6 +70,7 @@ begin
 				active_o <= '1';
 				
 				ram_mode_o <= ram_mode_i;
+				ramWData_o <= ramWData_i;
 			end if;
 		end if;
 	end process;

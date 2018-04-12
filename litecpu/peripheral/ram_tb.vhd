@@ -18,7 +18,8 @@ entity RAM_TB is
 		
 		MEMMode_i: in rammode_t;
 		MEMAddr_i: in mem_addr_t;
-		MEMRData_o: out dword
+		MEMRData_o: out dword;
+		MEMWData_i: in dword
 	);
 end RAM_TB;
 
@@ -43,6 +44,7 @@ begin
 		variable i : integer := 0;
 		variable tmp: std_logic_vector(31 downto 0);
 		variable ad0: integer;
+		variable ad1: integer;
 	begin
 		if (rst_i = '1') then
 			if (has_been_initialized = '0') then
@@ -65,12 +67,22 @@ begin
 			end if;
 		elsif (rising_edge(clk_i)) then
 			ad0 := to_integer(unsigned(addr_i));
+			ad1 := to_integer(unsigned(MEMAddr_i));
 			case mode_i is
 				when RAM_WRITE =>
 					mem(ad0 + 3) <= wdata_i(31 downto 24);
 					mem(ad0 + 2) <= wdata_i(23 downto 16);
 					mem(ad0 + 1) <= wdata_i(15 downto 8);
 					mem(ad0) <= wdata_i(7 downto 0);
+				when others =>
+					null;
+			end case;
+			case MEMMode_i is
+				when RAM_WRITE =>
+					mem(ad1 + 3) <= MEMWData_i(31 downto 24);
+					mem(ad1 + 2) <= MEMWData_i(23 downto 16);
+					mem(ad1 + 1) <= MEMWData_i(15 downto 8);
+					mem(ad1) <= MEMWData_i(7 downto 0);
 				when others =>
 					null;
 			end case;

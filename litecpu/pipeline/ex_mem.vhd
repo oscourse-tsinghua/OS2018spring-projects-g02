@@ -17,6 +17,7 @@ entity EX_MEM is
 		alu_data_i: in dword;
 
 		ram_mode_i: in rammode_t;
+		ramWData_i: in dword;
 		
 		--
 
@@ -24,7 +25,8 @@ entity EX_MEM is
 		regwr_addr_o: out reg_addr_t;
 		alu_data_o: out dword;
 		
-		ram_mode_o: out rammode_t
+		ram_mode_o: out rammode_t;
+		ramWData_o: out dword
 	);
 end EX_MEM;
 
@@ -44,6 +46,7 @@ begin
 				alu_data_o <= (others=> '0');
 				active_o <= '0';
 				ram_mode_o <= RAM_NOP;
+				ramWData_o <= (others=> '0');
 
 			else
 
@@ -52,6 +55,7 @@ begin
 				alu_data_o <= alu_data_i;
 				active_o <= '1';
 				ram_mode_o <= ram_mode_i;
+				ramWData_o <= ramWData_i;
 			end if;
 		end if;
 	end process;

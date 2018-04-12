@@ -20,7 +20,9 @@ entity EX is
 		alu_data_o: out dword;
 		
 		ram_mode_i: in rammode_t;
-		ram_mode_o: out rammode_t
+		ram_mode_o: out rammode_t;
+		ramWData_i: in dword;
+		ramWData_o: out dword
 	);
 end EX;
 
@@ -32,6 +34,7 @@ begin
 	regwr_addr_o <= regwr_addr_i;
 	
 	ram_mode_o <= ram_mode_i;
+	ramWData_o <= ramWData_i;
 
 
 	process (all)
@@ -52,6 +55,8 @@ begin
 				alu_data_o <= not alu_v1_i;
 			when ALUOP_LOA =>
 				alu_data_o <= alu_v1_i;
+			when ALUOP_STO =>
+				alu_data_o <= alu_v2_i;
 			when ALUOP_SHR =>
 				alu_data_o <= to_stdlogicvector(to_bitvector(alu_v1_i) srl to_integer(unsigned(alu_v2_i)));
 			when ALUOP_SHL =>

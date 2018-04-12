@@ -15,7 +15,8 @@ entity CPU_CORE is
 		
 		MEMMode_o: out rammode_t;
 		MEMAddr_o: out mem_addr_t;
-		MEMRData_i: in dword
+		MEMRData_i: in dword;
+		MEMWData_o: out dword
 	);
 end CPU_CORE;
 
@@ -40,7 +41,8 @@ architecture behave of CPU_CORE is
 	signal id_alu_v2_o: dword;
 	signal id_alu_op_o: alu_op_t;
 	signal id_ram_mode_o: rammode_t;
-
+	signal id_ramWData_o: dword;
+	
 	signal ex_active_i: std_logic;
 	signal ex_alu_v1_i: dword;
 	signal ex_alu_v2_i: dword;
@@ -53,6 +55,8 @@ architecture behave of CPU_CORE is
 	signal ex_alu_data_o: dword;
 	signal ex_ram_mode_i: rammode_t;
 	signal ex_ram_mode_o: rammode_t;
+	signal ex_ramWData_i: dword;
+	signal ex_ramWData_o: dword;
 	
 	signal mem_active_i: std_logic;
 	signal mem_regwr_en_i: std_logic;
@@ -63,6 +67,7 @@ architecture behave of CPU_CORE is
 	signal mem_regwr_en_o: std_logic;
 	signal mem_regwr_data_o: dword;
 	signal mem_ram_mode_i: rammode_t;
+	signal mem_ramWData_i: dword;
 
 	signal wb_regwr_en_i: std_logic;
 	signal wb_regwr_addr_i: reg_addr_t;
@@ -74,6 +79,7 @@ begin
 	ram_mode_o <= RAM_READ;
 	ram_addr_o <= if_pc_o;
 	ram_wdata_o <= (others=> '0'); -- never write ram now
+	MEMWData_o <= mem_ramWData_i;
 
 	MEMMode_o <= mem_ram_mode_i;
 	MEMAddr_o <= mem_alu_data_i;
@@ -151,7 +157,8 @@ begin
 		regwr_addr_o=> id_regwr_addr_o,
 		regwr_en_o=> id_regwr_en_o,
 		
-		ram_mode_o=> id_ram_mode_o
+		ram_mode_o=> id_ram_mode_o,
+		ramWData_o=> id_ramWData_o
 	);
 
 
@@ -177,7 +184,9 @@ begin
 		regwr_en_o=> ex_regwr_en_i,
 		
 		ram_mode_i=> id_ram_mode_o,
-		ram_mode_o=> ex_ram_mode_i
+		ram_mode_o=> ex_ram_mode_i,
+		ramWData_i=> id_ramWData_o,
+		ramWData_o=> ex_ramWData_i
 	);
 
 
@@ -198,7 +207,9 @@ begin
 		alu_data_o=> ex_alu_data_o,
 		
 		ram_mode_i=> ex_ram_mode_i,
-		ram_mode_o=> ex_ram_mode_o
+		ram_mode_o=> ex_ram_mode_o,
+		ramWData_i=> ex_ramWData_i,
+		ramWData_o=> ex_ramWData_o
 	);
 
 
@@ -220,7 +231,9 @@ begin
 		alu_data_o=> mem_alu_data_i,
 		
 		ram_mode_i=> ex_ram_mode_o,
-		ram_mode_o=> mem_ram_mode_i
+		ram_mode_o=> mem_ram_mode_i,
+		ramWData_i=> ex_ramWData_o,
+		ramWData_o=> mem_ramWData_i
 	);
 
 

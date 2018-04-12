@@ -25,7 +25,8 @@ entity ID is
 		regwr_addr_o: out reg_addr_t;
 		regwr_en_o: out std_logic;
 		
-		ram_mode_o: out rammode_t
+		ram_mode_o: out rammode_t;
+		ramWData_o: out dword
 	);
 end ID;
 
@@ -37,9 +38,11 @@ architecture behave of ID is
 	signal boffset: std_logic_vector(8 downto 0); -- branch offset
 	signal liimm: std_logic_vector(15 downto 0);  -- imm of load imm
 	signal ram_mode: rammode_t;
-
+	signal ramWData: dword;
+	
 begin
 	ram_mode_o <= ram_mode;
+	ramWData_o <= ramWData;
 
 	opcode <= inst_i(31 downto 27);
 	r3_addr <= inst_i(26 downto 18);
@@ -53,6 +56,9 @@ begin
 		if (opcode = OPCODE_SHR or opcode = OPCODE_SHL) then
 			reg1_addr_o <= r3_addr;
 			reg2_addr_o <= r1_addr;
+		elsif (opcode = OPCODE_STO) then
+			reg1_addr_o <= r1_addr;
+			reg2_addr_o <= r3_addr;
 		else
 			reg1_addr_o <= r1_addr;
 			reg2_addr_o <= r2_addr;
@@ -69,6 +75,7 @@ begin
 		alu_op_o <= ALUOP_ADD;
 		regwr_en_o <= '0';
 		ram_mode <= RAM_NOP;
+		ramWData <= (others=> '0');
 		
 		case opcode is
 			when OPCODE_ADD =>
@@ -107,6 +114,14 @@ begin
 				alu_op_o <= ALUOP_LOA;
 				ram_mode <= RAM_READ;
 				regwr_en_o <= '1';
+			
+			when OPCODE_STO =>
+				alu_v1_o <= reg1_data_i;
+				alu_v2_o <= reg2_data_i;
+				alu_op_o <= ALUOP_STO;
+				ram_mode <= RAM_WRITE;
+				ramWData <= reg1_data_i;
+				regwr_en_o <= '0';
 			
 			when OPCODE_SHR =>
 				alu_v1_o <= reg1_data_i;
