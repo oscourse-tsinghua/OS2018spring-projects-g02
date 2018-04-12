@@ -28,7 +28,7 @@ entity EX_MEM is
 		alu_data_o: out dword;
 
 		jb_en_o: out std_logic;
-		jb_pc_o: out mem_addr_t
+		jb_pc_o: out mem_addr_t;
 
 		ram_mode_o: out rammode_t
 	);
