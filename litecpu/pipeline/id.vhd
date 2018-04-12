@@ -27,7 +27,8 @@ entity ID is
 
 		jb_en_o: out std_logic;
 
-		ram_mode_o: out rammode_t
+		ram_mode_o: out rammode_t;
+		ram_wdata_o: out dword
 	);
 end ID;
 
@@ -49,8 +50,11 @@ architecture behave of ID is
 	signal reg3_addr: reg_addr_t;
 	signal regwr_en: std_logic;
 
+	signal ram_wdata: dword;
+
 begin
 	ram_mode_o <= ram_mode;
+	ram_wdata_o <= ram_wdata;
 
 	opcode <= inst_i(31 downto 27);
 	r3_addr <= inst_i(26 downto 18);
@@ -68,6 +72,10 @@ begin
 				or OPCODE = OPCODE_BEQ or OPCODE = OPCODE_BLT) then
 			reg1_addr <= r3_addr;
 			reg2_addr <= r1_addr;
+		elsif (opcode = OPCODE_STO) then
+			-- TODO: why here?
+			reg1_addr <= r1_addr;
+			reg2_addr <= r3_addr;
 		else
 			reg1_addr <= r1_addr;
 			reg2_addr <= r2_addr;
@@ -113,6 +121,7 @@ begin
 		regwr_en <= '0';
 		jb_en_o <= '0';
 		ram_mode <= RAM_NOP;
+		ram_wdata <= (others=> '0');
 
 		case opcode is
 			when OPCODE_ADD =>
@@ -151,6 +160,14 @@ begin
 				alu_op_o <= ALUOP_LOA;
 				ram_mode <= RAM_READ;
 				regwr_en <= '1';
+
+			when OPCODE_STO =>
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= reg2_data;
+				alu_op_o <= ALUOP_STO;
+				ram_mode <= RAM_WRITE;
+				ram_wdata <= reg1_data;
+				regwr_en <= '0';
 
 			when OPCODE_SHR =>
 				alu_v1_o <= reg1_data;

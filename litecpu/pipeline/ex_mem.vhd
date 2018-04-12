@@ -20,6 +20,7 @@ entity EX_MEM is
 		jb_pc_i: mem_addr_t;
 
 		ram_mode_i: in rammode_t;
+		ram_wdata_i: in dword;
 
 		--
 
@@ -30,7 +31,8 @@ entity EX_MEM is
 		jb_en_o: out std_logic;
 		jb_pc_o: out mem_addr_t;
 
-		ram_mode_o: out rammode_t
+		ram_mode_o: out rammode_t;
+		ram_wdata_o: out dword
 	);
 end EX_MEM;
 
@@ -50,6 +52,7 @@ begin
 				alu_data_o <= (others=> '0');
 				active_o <= '0';
 				ram_mode_o <= RAM_NOP;
+				ram_wdata_o <= (others=> '0');
 
 				jb_en_o <= '0';
 				jb_pc_o <= (others=> '0');
@@ -64,6 +67,7 @@ begin
 				jb_pc_o <= jb_pc_i;
 
 				ram_mode_o <= ram_mode_i;
+				ram_wdata_o <= ram_wdata_i;
 			end if;
 		end if;
 	end process;

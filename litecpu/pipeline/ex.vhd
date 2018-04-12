@@ -22,9 +22,11 @@ entity EX is
 		jb_en_i: in std_logic;
 		jb_en_o: out std_logic;
 		jb_pc_o: out mem_addr_t;
-		
+
 		ram_mode_i: in rammode_t;
-		ram_mode_o: out rammode_t
+		ram_mode_o: out rammode_t;
+		ram_wdata_i: in dword;
+		ram_wdata_o: out dword
 	);
 end EX;
 
@@ -34,8 +36,9 @@ begin
 
 	regwr_en_o <= regwr_en_i;
 	regwr_addr_o <= regwr_addr_i;
-	
+
 	ram_mode_o <= ram_mode_i;
+	ram_wdata_o <= ram_wdata_i;
 
 	jb_en_o <= jb_en_i;
 
@@ -68,6 +71,10 @@ begin
 			when ALUOP_LOA =>
 				alu_data_o <= alu_v1_i;
 
+			when ALUOP_STO =>
+				-- see id:TODO: why this?
+				alu_data_o <= alu_v2_i;
+
 			when ALUOP_SHR =>
 				alu_data_o <= to_stdlogicvector(to_bitvector(alu_v1_i) srl to_integer(unsigned(alu_v2_i)));
 
@@ -76,7 +83,7 @@ begin
 
 			when ALUOP_LL =>
 				alu_data_o <= alu_v1_i;
-				
+
 			when others =>
 				fatal_o <= '1';
 		end case;
