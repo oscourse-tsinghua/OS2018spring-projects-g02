@@ -31,8 +31,8 @@ def general_xyz(opcode, rx, ry, rz):
 
 def general_ll(rx, liimm):
     t = lambda x, n: bin(x)[2:].rjust(n, '0')
-    binrep = t(13, 5) + t(rx, 9) + t(0, 2)
-    return (hex(int(binrep, 2))[2:]+liimm).rjust(8, '0')
+    binrep = t(13, 5) + t(rx, 9) + t(0, 2) + t(liimm, 16)
+    return hex(int(binrep,2))[2:].rjust(8, '0')
 
 def general_xyi(opcode, rx, ry, ii):
     t = lambda x, n: bin(x)[2:].rjust(n, '0')
@@ -110,7 +110,11 @@ def _shl(inst):
 def _ll(inst):
     toks = inst.strip().split()[1:]
     rx = reg2rn(toks[0])
-    liimm = toks[1][2:]
+    liimm = toks[1]
+    if liimm.startswith("0x"):
+        liimm = int(liimm[2:], 16)
+    else:
+        liimm = int(liimm)
     return general_ll(rx, liimm)
 
 def _beq(inst):
@@ -129,6 +133,8 @@ def _blt(inst):
 
 with open("inst.l2", "r") as fin, open("inst.hex", "w") as fout:
     for l in fin:
+        if len(l.strip()) == 0:
+            continue;
         if l.strip()[0] == ';':
             continue;
         typ = l.strip().split()[0]
