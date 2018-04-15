@@ -26,11 +26,12 @@ void new_register_data_structures_objects(struct build_state *);
 
 void build_tests(void){
 	struct build_state * state = create_build_state();
+
 	register_builtin_objects(state);
 	register_libc_objects(state);
 	register_kernel_objects(state);
-	construct_generated_c_entities(state);
 
+	/* the state here could be thought of as passed in as const */
 	construct_entity(state, "kernel/kernel.l1");
 
 	destroy_build_state(state);

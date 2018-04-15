@@ -1181,6 +1181,9 @@ void do_link_to_l1(struct linker_state * state){
 		unsigned int len = (unsigned int)strlen((char*)key) + 1;
 		unsigned int str_words = len / 4;
 		unsigned int extra = len - (str_words * 4);
+#ifdef DONT_EXPORT_SYMBOLS_L1
+		break;
+#endif
 		buffered_printf(&state->file_output, "EXTERNAL 0x%X\n", current_external_id);
 		current_external_id++;
 		while(words_printed < str_words){
