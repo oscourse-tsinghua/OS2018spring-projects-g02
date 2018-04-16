@@ -1,0 +1,188 @@
+#   Copyright 2016 Robert Elder Software Inc.
+#   
+#   Licensed under the Apache License, Version 2.0 (the "License"); you may not 
+#   use this file except in compliance with the License.  You may obtain a copy 
+#   of the License at
+#   
+#       http://www.apache.org/licenses/LICENSE-2.0
+#   
+#   Unless required by applicable law or agreed to in writing, software 
+#   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT 
+#   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the 
+#   License for the specific language governing permissions and limitations 
+#   under the License.
+
+            One-Page CPU L2 Assembly Language Syntax Specification
+
+The L2 assembly language is meant to augment the L1 language in such a way that
+any conforming L1 file is also an L2 file, but not every L2 file is an L1 file.
+The L2 language allows for statements that specify linkage information,
+comments, and program offsets that are defined relatively.  I've recently made
+a number of changes to this, and plan to make more in the future.  For now,
+this grammar will suffice for describing the language:
+
+interface_specifier
+	:  "IMPLEMENTS"
+	:  "REQUIRES"
+	;
+
+linkage_domain
+	:  "INTERNAL"
+	:  "EXTERNAL"
+	;
+
+symbol_linkage_declaration
+	:  interface_specifier linkage_domain identifier
+	:  interface_specifier "," interface_specifier linkage_domain identifier
+
+offset_directive
+	:  "OFFSET" "END"
+	:  "OFFSET" "RELOCATABLE"
+	:  "OFFSET" hexadecimal_number
+	;
+
+define_word_directive
+	:  "DW" hexadecimal_number
+	;
+
+skip_words_directive
+	:  "SW" hexadecimal_number
+	;
+
+string_directive
+	:  "STRING" hexadecimal_number
+	;
+
+implemented_directive
+	:  "IMPLEMENTED" hexadecimal_number
+	;
+
+required_directive
+	:  "REQUIRED" hexadecimal_number
+	;
+
+unresolved_directive
+	:  "UNRESOLVED" hexadecimal_number
+	;
+
+region_directive
+	:  "REGION" hexadecimal_number
+	;
+
+start_directive
+	:  "START" hexadecimal_number
+	;
+
+end_directive
+	:  "END" hexadecimal_number
+	;
+
+permission_directive
+	:  "PERMISSION" hexadecimal_number
+	;
+
+linkage_directive
+	:  linkage_domain hexadecimal_number
+	;
+
+function_directive
+	:  "FUNCTION" hexadecimal_number
+	:  "FUNCTION" identifier identifier
+	;
+
+variable_directive
+	:  "VARIABLE" hexadecimal_number
+	:  "VARIABLE" identifier identifier
+	;
+
+constant_directive
+	:  "CONSTANT" hexadecimal_number
+	:  "CONSTANT" identifier identifier
+	;
+
+directive_statement
+	:  offset_directive
+	:  define_word_directive
+	:  skip_words_directive
+	:  function_directive
+	:  variable_directive
+	:  constant_directive
+	:  string_directive
+	:  implemented_directive
+	:  required_directive
+	:  unresolved_directive
+	:  linkage_directive
+	:  region_directive
+	:  start_directive
+	:  end_directive
+	:  permission_directive
+	:  symbol_linkage_declaration
+	;
+
+named_register
+	:  "SP"
+	:  "FP"
+	:  "FR"
+	:  "PC"
+	:  "ZR"
+	:  "WR"
+	;
+
+numbered_register
+	: "r" decimal_number
+	;
+
+register
+	: named_register
+	: numbered_register
+	;
+
+branch_distance
+	:  identifier
+	:  decimal_number
+	:  "-" decimal_number
+	;
+
+instruction_statement
+	: "add" register register register
+	: "sub" register register register
+	: "mul" register register register
+	: "div" register register register
+	: "and" register register register
+	: "or" register register register
+	: "not" register register
+	: "loa" register register
+	: "sto" register register
+	: "shr" register register
+	: "shl" register register
+	: "beq" register register branch_distance
+	: "blt" register register branch_distance
+	: "ll" register hexidecimal_number
+	;
+
+label_statement
+	:  identifier ":"
+	;
+
+statement
+	:  instruction_statement
+	:  directive_statement
+	:  label_statement
+	;
+
+after_statement
+	:  newline statement_list
+	:  comment newline statement_list
+	:  comment 
+
+statement_list
+	:  after_statement
+	:  statement after_statement
+	:  epsilon
+	;
+
+l2_file
+	: statement_list
+	;
+
+The sha1sum of the lines above is 1547488351afa9886e1d16dd453d39e2c3293500

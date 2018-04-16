@@ -1,0 +1,115 @@
+/*
+    Copyright 2016 Robert Elder Software Inc.
+    
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not 
+    use this file except in compliance with the License.  You may obtain a copy 
+    of the License at
+    
+        http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT 
+    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the 
+    License for the specific language governing permissions and limitations 
+    under the License.
+*/
+
+#include "T0_IDENTIFIER_list.h"
+
+void T0_IDENTIFIER_list_add_end(struct T0_IDENTIFIER_list * list, T0_LITERAL item){
+	binary_exponential_buffer_increment(&list->buffer, 1);
+	((T0_LITERAL *)binary_exponential_buffer_data(&list->buffer))[binary_exponential_buffer_size(&list->buffer) -1] = item;
+}
+
+void T0_IDENTIFIER_list_add_all_end(struct T0_IDENTIFIER_list * list, struct T0_IDENTIFIER_list * src){
+	unsigned int items_to_add = T0_IDENTIFIER_list_size(src);
+	unsigned int previous_items = T0_IDENTIFIER_list_size(list);
+	T0_LITERAL * ptr_src;
+	T0_LITERAL * ptr_dst;
+	binary_exponential_buffer_increment(&list->buffer, items_to_add);
+	ptr_src = (T0_LITERAL *)binary_exponential_buffer_data(&src->buffer);
+	ptr_dst = (T0_LITERAL *)binary_exponential_buffer_data(&list->buffer);
+	memcpy((void*)&ptr_dst[previous_items], (void*)&ptr_src[0], sizeof(T0_LITERAL) * items_to_add);
+}
+
+T0_LITERAL T0_IDENTIFIER_list_pop_end(struct T0_IDENTIFIER_list * list){
+	T0_LITERAL rtn = *((T0_LITERAL *)binary_exponential_buffer_get(&list->buffer, binary_exponential_buffer_size(&list->buffer) -1));
+	binary_exponential_buffer_decrement(&list->buffer, 1);
+	return rtn;
+}
+
+void T0_IDENTIFIER_list_remove_all(struct T0_IDENTIFIER_list * list, T0_LITERAL item, int (*cmp)(T0_LITERAL, T0_LITERAL)){
+	/* Remove all instances of item from the list */
+	unsigned int i = 0;
+	unsigned int old_i = 0;
+	unsigned int new_i = 0;
+	unsigned int oc = T0_IDENTIFIER_list_occurrences(list, item, cmp);
+	T0_LITERAL * data = (T0_LITERAL *)binary_exponential_buffer_data(&list->buffer);
+
+	for(i = 0; i < binary_exponential_buffer_size(&list->buffer); i++){
+		if(cmp(data[i], item)){
+			data[new_i] = data[old_i];
+			new_i++;
+		}
+		old_i++;
+	}
+
+	binary_exponential_buffer_decrement(&list->buffer, old_i - new_i);
+	assert(oc == (old_i - new_i));
+}
+
+unsigned int T0_IDENTIFIER_list_occurrences(struct T0_IDENTIFIER_list * list, T0_LITERAL item, int (*cmp)(T0_LITERAL, T0_LITERAL)){
+	unsigned int i;
+	unsigned int occurrences = 0;
+	for(i = 0; i < binary_exponential_buffer_size(&list->buffer); i++){
+		if(!cmp((*((T0_LITERAL *)binary_exponential_buffer_get(&list->buffer, i))), item)){
+			occurrences++;
+		}
+	}
+	return occurrences;
+}
+
+T0_LITERAL T0_IDENTIFIER_list_get(struct T0_IDENTIFIER_list * list, unsigned int i){
+	assert(i < binary_exponential_buffer_size(&list->buffer));
+	return *((T0_LITERAL *)binary_exponential_buffer_get(&list->buffer, i));
+}
+
+unsigned int T0_IDENTIFIER_list_size(struct T0_IDENTIFIER_list * list){
+	return binary_exponential_buffer_size(&list->buffer);
+}
+
+T0_LITERAL * T0_IDENTIFIER_list_data(struct T0_IDENTIFIER_list * list){
+	return ((T0_LITERAL *)binary_exponential_buffer_data(&list->buffer));
+}
+
+void T0_IDENTIFIER_list_destroy(struct T0_IDENTIFIER_list * list){
+	binary_exponential_buffer_destroy(&list->buffer);
+}
+
+void T0_IDENTIFIER_list_create(struct T0_IDENTIFIER_list * list){
+	binary_exponential_buffer_create(&list->buffer, sizeof(T0_LITERAL));
+}
+
+struct T0_IDENTIFIER_list T0_IDENTIFIER_list_copy(struct T0_IDENTIFIER_list * list){
+	struct T0_IDENTIFIER_list copy;
+	copy.buffer = binary_exponential_buffer_copy(&list->buffer);
+	return copy;
+}
+
+void T0_IDENTIFIER_list_reverse(struct T0_IDENTIFIER_list * list){
+	struct binary_exponential_buffer new_buffer;
+	unsigned int i = 0;
+	unsigned int current_size = binary_exponential_buffer_size(&list->buffer);
+	T0_LITERAL * data_src;
+	T0_LITERAL * data_dst;
+	binary_exponential_buffer_create(&new_buffer, sizeof(T0_LITERAL));
+	binary_exponential_buffer_increment(&new_buffer, current_size);
+	data_src = (T0_LITERAL *)binary_exponential_buffer_data(&list->buffer);
+	data_dst = (T0_LITERAL *)binary_exponential_buffer_data(&new_buffer);
+
+	for(i = 0; i < current_size; i++){
+		data_dst[i] = data_src[(current_size - 1) -i];
+	}
+	binary_exponential_buffer_destroy(&list->buffer);
+	list->buffer = new_buffer;
+}
