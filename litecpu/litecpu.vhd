@@ -7,29 +7,111 @@ use work.consts.ALL;
 entity litecpu is
 	port (
 		clk_i: in std_logic;
-		rst_i: in std_logic
+		rst_i: in std_logic;
+		led: out std_logic_vector(7 downto 0);
+		led_num: out std_logic_vector(15 downto 0)
 	 );
 end litecpu;
 
-
 architecture behave of litecpu is
-	signal ram_mode: rammode_t;
-	signal ram_addr: mem_addr_t;
-	signal ram_wdata: dword;
-	signal ram_rdata: dword;
+	signal clk: std_logic := '0';
+	signal rst: std_logic := '1';
+
+	signal addr: mem_addr_t;
+	signal rdata: dword;
+	signal wdata: dword;
+	signal rammode: rammode_t;
+
+	signal MEMMode: rammode_t;
+	signal MEMAddr: mem_addr_t;
+	signal MEMRData: dword;
+	signal MEMWData: dword;
+	
+	signal watch_reg: dword;
+	signal watch_inst: dword;
+
+	-- Don't know why but component must be used here
+	component RAM is
+		port (
+			clk_i: in std_logic;
+			rst_i: in std_logic;
+
+			mode_i: in rammode_t;
+			addr_i: in mem_addr_t;
+			rdata_o: out dword;
+			wdata_i: in dword;
+				
+			MEMMode_i: in rammode_t;
+			MEMAddr_i: in mem_addr_t;
+			MEMRData_o: out dword;
+			MEMWData_i: in dword
+		);
+	end component;
+
+
+	component CPU_CORE is
+		port (
+			rst_i: in std_logic;
+			clk_i: in std_logic; 
+
+			ram_mode_o: out rammode_t;
+			ram_addr_o: out mem_addr_t;
+			ram_wdata_o: out dword;
+			ram_rdata_i: in dword;
+				
+			MEMMode_o: out rammode_t;
+			MEMAddr_o: out mem_addr_t;
+			MEMRData_i: in dword;
+			MEMWData_o: out dword;
+			
+			display_reg_o: out dword;
+			display_inst_o: out dword
+		);
+	end component;
+
 
 begin
+	clk <= clk_i;
+	rst <= rst_i;
 
---	ucpu_core:
---	entity work.CPU_CORE
---	port map (
---		rst_i=> rst_i,
---		clk_i=> clk_i,
---
---		ram_mode_o=> ram_mode,
---		ram_addr_o=> ram_addr,
---		ram_wdata_o=> ram_wdata,
---		ram_rdata_i=> ram_rdata
---	);
+	led <= not watch_reg(7 downto 0);
+	led_num <= watch_inst(15 downto 0);
+	uram:
+	RAM
+	port map (
+		clk_i=> clk,
+		rst_i=> rst,
+
+		addr_i=> addr,
+		rdata_o=> rdata,
+		wdata_i=> wdata,
+		mode_i=> rammode,
+		
+		MEMMode_i => MEMMode,
+		MEMAddr_i => MEMAddr,
+		MEMRData_o => MEMRData,
+		MEMWData_i => MEMWData
+	);
+
+
+	ucpu_core:
+	CPU_CORE
+	port map (
+		clk_i=> clk,
+		rst_i=> rst,
+
+		ram_mode_o=> rammode,
+		ram_addr_o=> addr,
+		ram_wdata_o=> wdata,
+		ram_rdata_i=> rdata,
+		
+		MEMMode_o => MEMMode,
+		MEMAddr_o => MEMAddr,
+		MEMRData_i => MEMRData,
+		MEMWData_o => MEMWData,
+		
+		display_reg_o => watch_reg,
+		display_inst_o => watch_inst
+	);
 
 end behave;

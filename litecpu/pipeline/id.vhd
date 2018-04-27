@@ -135,7 +135,20 @@ begin
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_SUB;
 				regwr_en <= '1';
+				
+			when OPCODE_MUL =>
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= reg2_data;
+				alu_op_o <= ALUOP_MUL;
+				regwr_en <= '1';
 
+			when OPCODE_DIV =>
+				-- DIV_ZERO should be set, but FR is not supported now --
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= reg2_data;
+				alu_op_o <= ALUOP_DIV;
+				regwr_en <= '1';
+				
 			when OPCODE_AND =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;

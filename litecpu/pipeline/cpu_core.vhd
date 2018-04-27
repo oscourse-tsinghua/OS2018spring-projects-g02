@@ -16,12 +16,17 @@ entity CPU_CORE is
 		MEMMode_o: out rammode_t;
 		MEMAddr_o: out mem_addr_t;
 		MEMRData_i: in dword;
-		MEMWData_o: out dword
+		MEMWData_o: out dword;
+		
+		display_reg_o: out dword;
+		display_inst_o: out dword
 	);
 end CPU_CORE;
 
 
 architecture behave of CPU_CORE is
+
+	signal watch_reg: dword;
 
 	signal if_active_i: std_logic;
 	signal if_pc_o: mem_addr_t;
@@ -84,6 +89,8 @@ architecture behave of CPU_CORE is
 
 begin
 	if_inst <= ram_rdata_i;
+	display_inst_o <= ram_rdata_i;
+	
 	ram_mode_o <= RAM_READ;
 	ram_addr_o <= if_pc_o;
 	ram_wdata_o <= (others=> '0'); -- never write ram now
@@ -92,6 +99,8 @@ begin
 	MEMMode_o <= mem_ram_mode_i;
 	MEMAddr_o <= mem_alu_data_i;
 
+	display_reg_o <= watch_reg;
+	
 	uregs:
 	entity work.REGS
 	port map (
@@ -105,7 +114,9 @@ begin
 
 		wr_en_i=> wb_active_i and wb_regwr_en_i, -- only when active
 		wr_addr_i=> wb_regwr_addr_i,
-		wr_data_i=> wb_regwr_data_i
+		wr_data_i=> wb_regwr_data_i,
+		
+		display_reg_o=> watch_reg
 	);
 
 

@@ -16,7 +16,9 @@ entity REGS is
 
 		wr_en_i: in std_logic;
 		wr_addr_i: in reg_addr_t;
-		wr_data_i: in dword
+		wr_data_i: in dword;
+		
+		display_reg_o: out dword
 	);
 end REGS;
 
@@ -24,7 +26,7 @@ end REGS;
 architecture behave of REGS is
 	-- TODO: probably fixing this bug? or feature?
 	-- pretend there are 512 registers when there are only 32
-	type t_reg_regs is array(31 downto 0) of dword;
+	type t_reg_regs is array(16 downto 0) of dword;
 	signal regs: t_reg_regs;
 
 	-- real address: the lowest 5 bit of expected address
@@ -36,7 +38,7 @@ begin
 	real_wr_addr <= wr_addr_i(4 downto 0);
 	real_r1_addr <= raddr1_i(4 downto 0);
 	real_r2_addr <= raddr2_i(4 downto 0);
-
+	display_reg_o <= regs(6);
 
 	-- writing to ZR and WR will have no effect as their reads are
 	--	hardcoded

@@ -22,6 +22,8 @@ package consts is
 
 	constant OPCODE_ADD: opcode_t := "00000";
 	constant OPCODE_SUB: opcode_t := "00001";
+	constant OPCODE_MUL: opcode_t := "00010";
+	constant OPCODE_DIV: opcode_t := "00011";
 	constant OPCODE_AND: opcode_t := "00100";
 	constant OPCODE_OR:  opcode_t := "00101";
 	constant OPCODE_NOT: opcode_t := "00110";
@@ -42,6 +44,8 @@ package consts is
 	type alu_op_t is (
 		ALUOP_ADD,
 		ALUOP_SUB,
+		ALUOP_MUL,
+		ALUOP_DIV,
 		ALUOP_AND,
 		ALUOP_OR,
 		ALUOP_NOT,

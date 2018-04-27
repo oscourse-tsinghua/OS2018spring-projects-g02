@@ -58,6 +58,20 @@ def _sub(inst):
     rz = reg2rn(toks[2])
     return general_xyz(1, rx, ry, rz)
 
+def _mul(inst):
+    toks = inst.strip().split()[1:]
+    rx = reg2rn(toks[0])
+    ry = reg2rn(toks[1])
+    rz = reg2rn(toks[2])
+    return general_xyz(2, rx, ry, rz)
+
+def _div(inst):
+    toks = inst.strip().split()[1:]
+    rx = reg2rn(toks[0])
+    ry = reg2rn(toks[1])
+    rz = reg2rn(toks[2])
+    return general_xyz(3, rx, ry, rz) 
+ 
 def _and(inst):
     toks = inst.strip().split()[1:]
     rx = reg2rn(toks[0])
@@ -127,11 +141,16 @@ def _blt(inst):
     ii = int(toks[2])
     return general_xyi(12, rx, ry, ii)
 
-with open("inst.l2", "r") as fin, open("inst.hex", "w") as fout:
+BOOT_PC = 0
+pc = BOOT_PC
+with open("inst.l2", "r") as fin, open("inst.hex", "w") as fout, open("inst.vhdl", "w") as fv:
     for l in fin:
         if l.strip()[0] == ';':
             continue;
         typ = l.strip().split()[0]
         stmt = "_" + typ + "(l.strip())"
-        print(eval(stmt), file=fout)
-
+        hex_stmt = eval(stmt)
+        print(hex_stmt, file=fout)
+        for i in range(3, -1, -1):
+            print("mem(%d) <= x\"%s\";" % (pc, str(hex_stmt[i * 2:(i + 1) * 2])), file = fv)
+            pc += 1
