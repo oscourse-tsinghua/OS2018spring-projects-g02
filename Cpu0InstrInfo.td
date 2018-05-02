@@ -256,7 +256,7 @@ multiclass StoreM32<bits<8> op, string instr_asm, PatFrag OpNode,
 }
 
 //@JumpFR {
-let isBranch=1, isTerminator=1, isBarrier=1, imm16=0, hasDelaySlot = 1,
+let isBranch=1, isTerminator=1, isBarrier=1, imm16=0, hasDelaySlot = 0,
     isIndirectBranch = 1 in
 class JumpFR<bits<8> op, string instr_asm, RegisterClass RC>:
   FL<op, (outs), (ins RC:$ra),
@@ -313,7 +313,7 @@ def SHL     : shift_rotate_imm32<0x1e, 0x00, "shl", shl>;
 def JR      : JumpFR<0x3c, "jr", GPROut>;
 
 let Predicates = [Ch3_4] in {
-let isReturn=1, isTerminator=1, hasDelaySlot=1, isBarrier=1, hasCtrlDep=1 in
+let isReturn=1, isTerminator=1, hasDelaySlot=0, isBarrier=1, hasCtrlDep=1 in
   def RetLR : Cpu0Pseudo<(outs), (ins), "", [(Cpu0Ret)]>;
 }
 
