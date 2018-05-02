@@ -30,6 +30,10 @@ public:
 
   const Cpu0RegisterInfo &getRegisterInfo() const override;
 
+  void copyPhysReg(MachineBasicBlock &MBB, MachineBasicBlock::iterator MI,
+                   const DebugLoc &DL, unsigned DestReg, unsigned SrcReg,
+                   bool KillSrc) const override;
+
 //@expandPostRAPseudo
   bool expandPostRAPseudo(MachineInstr &MI) const override;
 

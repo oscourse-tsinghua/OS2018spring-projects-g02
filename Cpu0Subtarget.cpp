@@ -49,6 +49,7 @@ Cpu0Subtarget::Cpu0Subtarget(const Triple &TT, const std::string &CPU,
       FrameLowering(Cpu0FrameLowering::create(*this)),
       TLInfo(Cpu0TargetLowering::create(TM, *this)) {
 
+  EnableOverflow = false;
 }
 
 bool Cpu0Subtarget::isPositionIndependent() const {
