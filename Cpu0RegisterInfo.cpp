@@ -58,7 +58,7 @@ BitVector Cpu0RegisterInfo::
 getReservedRegs(const MachineFunction &MF) const {
 //@getReservedRegs body {
   static const uint16_t ReservedCPURegs[] = {
-    Cpu0::ZR, Cpu0::AT, Cpu0::SP, Cpu0::LR, Cpu0::PC
+    Cpu0::ZR, Cpu0::WR, Cpu0::AT, Cpu0::SP, Cpu0::LR, Cpu0::PC
   };
   BitVector Reserved(getNumRegs());
 
