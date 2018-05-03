@@ -64,6 +64,13 @@ Cpu0TargetLowering::Cpu0TargetLowering(const Cpu0TargetMachine &TM,
   // Cpu0 Custom Operations
 
   // Operations not directly supported by Cpu0.
+  // Cpu0 doesn't have sext_inreg, replace them with shl/sra.
+  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i1 , Expand);
+  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i8 , Expand);
+  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i16 , Expand);
+  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i32 , Expand);
+  setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::Other , Expand);
+
 
 //- Set .align 2
 // It will emit .align 2 later

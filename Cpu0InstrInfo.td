@@ -314,6 +314,12 @@ def MULu    : ArithLogicR<0x17, "mul", mul, IIImul, CPURegs>;
 }
 }
 
+let Predicates = [Ch4_2] in {
+def AND     : ArithLogicR<0x18, "and", and, IIAlu, CPURegs, 1>;
+def OR      : ArithLogicR<0x19, "or", or, IIAlu, CPURegs, 1>;
+def XOR     : ArithLogicR<0x1a, "xor", xor, IIAlu, CPURegs, 1>;
+}
+
 /// Shift Instructions
 let Predicates = [Ch4_1] in {
 def SHLV    : shift_rotate_reg<0x21, 0x00, "shl", shl, CPURegs>;
@@ -359,4 +365,10 @@ def : Pat<(i32 immLow16Zero:$in),
 def : Pat<(i32 imm:$imm),
           (ORi (LUi (HI16 imm:$imm)), (LO16 imm:$imm))>;
 } // let Predicates = [Ch3_4]
+
+let Predicates = [Ch4_2] in {
+def : Pat<(not CPURegs:$in),
+// 1: in == 0; 0: in != 0
+          (XOR CPURegs:$in, (ADDiu ZR, -1))>;
+}
 
