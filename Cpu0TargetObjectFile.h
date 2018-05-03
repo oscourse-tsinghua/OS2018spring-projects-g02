@@ -25,6 +25,18 @@ class Cpu0TargetMachine;
 
     void Initialize(MCContext &Ctx, const TargetMachine &TM) override;
 
+    /// IsGlobalInSmallSection - Return true if this global address should be
+    /// placed into small data/bss section.
+    bool IsGlobalInSmallSection(const GlobalValue *GV,
+                                const TargetMachine &TM, SectionKind Kind) const;
+    bool IsGlobalInSmallSection(const GlobalValue *GV,
+                                const TargetMachine &TM) const;
+    bool IsGlobalInSmallSectionImpl(const GlobalValue *GV,
+                                    const TargetMachine &TM) const;
+
+    MCSection *SelectSectionForGlobal(const GlobalValue *GV, SectionKind Kind,
+                                      Mangler &Mang,
+                                      const TargetMachine &TM) const override;
   };
 } // end namespace llvm
 
