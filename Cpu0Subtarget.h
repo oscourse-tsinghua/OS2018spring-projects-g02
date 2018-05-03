@@ -82,7 +82,7 @@ public:
   }
 
   bool hasChapter7_1() const {
-    return false;
+    return true;
   }
 
   bool hasChapter8_1() const {

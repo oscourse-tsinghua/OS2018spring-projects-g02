@@ -313,6 +313,10 @@ class EffectiveAddress<string instr_asm, RegisterClass RC, Operand Mem> :
 ///  aligned
 defm LD     : LoadM32<0x01,  "loa",  load_a>;
 defm ST     : StoreM32<0x02, "sto",  store_a>;
+let Predicates = [Ch7_1] in {
+defm LB     : LoadM32<0x04, "lb", sextloadi8>;
+defm SB     : StoreM32<0x05, "sb", truncstorei8>;
+}
 
 /// Arithmetic Instructions (ALU Immediate)
 // IR "add" defined in include/llvm/Target/TargetSelectionDAG.td, line 315 (def add).
