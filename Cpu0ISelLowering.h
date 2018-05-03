@@ -255,6 +255,8 @@ namespace llvm {
                         const SmallVectorImpl<SDValue> &OutVals,
                         const SDLoc &dl, SelectionDAG &DAG) const override;
 
+    bool isOffsetFoldingLegal(const GlobalAddressSDNode *GA) const override;
+
   };
   const Cpu0TargetLowering *
   createCpu0SETargetLowering(const Cpu0TargetMachine &TM, const Cpu0Subtarget &STI);

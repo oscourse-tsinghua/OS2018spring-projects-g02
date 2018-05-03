@@ -275,6 +275,12 @@ Cpu0TargetLowering::LowerReturn(SDValue Chain,
   return DAG.getNode(Cpu0ISD::Ret, DL, MVT::Other, RetOps);
 }
 
+bool
+Cpu0TargetLowering::isOffsetFoldingLegal(const GlobalAddressSDNode *GA) const {
+  // The Cpu0 target isn't yet aware of offsets.
+  return false;
+}
+
 Cpu0TargetLowering::Cpu0CC::Cpu0CC(
   CallingConv::ID CC, bool IsO32_, CCState &Info,
   Cpu0CC::SpecialCallingConvType SpecialCallingConv_)
