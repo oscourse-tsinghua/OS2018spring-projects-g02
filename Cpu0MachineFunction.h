@@ -36,11 +36,27 @@ public:
     SRetReturnReg(0), CallsEhReturn(false), CallsEhDwarf(false),
     GlobalBaseReg(0),
     VarArgsFrameIndex(0), 
+    InArgFIRange(std::make_pair(-1, 0)),
+    OutArgFIRange(std::make_pair(-1, 0)), GPFI(0), DynAllocFI(0),
     EmitNOAT(false),
     MaxCallFrameSize(0)
     {}
 
   ~Cpu0FunctionInfo();
+
+  bool isInArgFI(int FI) const {
+    return FI <= InArgFIRange.first && FI >= InArgFIRange.second;
+  }
+  void setLastInArgFI(int FI) { InArgFIRange.second = FI; }
+  bool isOutArgFI(int FI) const {
+    return FI <= OutArgFIRange.first && FI >= OutArgFIRange.second;
+  }
+
+  int getGPFI() const { return GPFI; }
+  void setGPFI(int FI) { GPFI = FI; }
+  bool isGPFI(int FI) const { return GPFI && GPFI == FI; }
+
+  bool isDynAllocFI(int FI) const { return DynAllocFI && DynAllocFI == FI; }
 
   unsigned getSRetReturnReg() const { return SRetReturnReg; }
   void setSRetReturnReg(unsigned Reg) { SRetReturnReg = Reg; }
@@ -73,6 +89,14 @@ public:
   void setMaxCallFrameSize(unsigned S) { MaxCallFrameSize = S; }
   bool getEmitNOAT() const { return EmitNOAT; }
   void setEmitNOAT() { EmitNOAT = true; }
+
+  /// Create a MachinePointerInfo that has an ExternalSymbolPseudoSourceValue
+  /// object representing a GOT entry for an external function.
+  MachinePointerInfo callPtrInfo(const char *ES);
+
+  /// Create a MachinePointerInfo that has a GlobalValuePseudoSourceValue object
+  /// representing a GOT entry for a global function.
+  MachinePointerInfo callPtrInfo(const GlobalValue *GV);
 
 private:
   virtual void anchor();
@@ -107,7 +131,15 @@ private:
   /// Frame objects for spilling eh data registers.
   int EhDataRegFI[2];
 
+  // Range of frame object indices.
+  // InArgFIRange: Range of indices of all frame objects created during call to
+  //               LowerFormalArguments.
+  // OutArgFIRange: Range of indices of all frame objects created during call to
+  //                LowerCall except for the frame object for restoring $gp.
+  std::pair<int, int> InArgFIRange, OutArgFIRange;
+
   int GPFI; // Index of the frame object for restoring $gp
+  mutable int DynAllocFI; // Frame index of dynamically allocated stack area.
   bool EmitNOAT;
   unsigned MaxCallFrameSize;
 };

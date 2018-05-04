@@ -76,6 +76,12 @@ class Cpu0Pseudo<dag outs, dag ins, string asmstr, list<dag> pattern>:
   let isPseudo = 1;
 }
 
+// Cpu032 Pseudo Instruction Format
+class PseudoSE<dag outs, dag ins, list<dag> pattern,
+               InstrItinClass itin = IIPseudo> :
+  Cpu0Pseudo<outs, ins, "", pattern> {
+}
+
 //===----------------------------------------------------------------------===//
 // Format A instruction class in Cpu0 : <|opcode|ra|rb|rc|cx|>
 //===----------------------------------------------------------------------===//

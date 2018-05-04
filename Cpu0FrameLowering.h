@@ -35,6 +35,10 @@ public:
 
   bool hasFP(const MachineFunction &MF) const override;
 
+  MachineBasicBlock::iterator
+  eliminateCallFramePseudoInstr(MachineFunction &MF,
+                                  MachineBasicBlock &MBB,
+                                  MachineBasicBlock::iterator I) const override;
 };
 
 /// Create Cpu0FrameLowering objects.
