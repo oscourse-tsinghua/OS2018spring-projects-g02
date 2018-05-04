@@ -96,6 +96,12 @@ include "Cpu0InstrFormats.td"
 //===----------------------------------------------------------------------===//
 // Instruction operand types
 
+// BEQ, BNE
+def brtarget16    : Operand<OtherVT> {
+  let EncoderMethod = "getBranch16TargetOpValue";
+  let OperandType = "OPERAND_PCREL";
+  let DecoderMethod = "DecodeBranch16Target";
+}
 // Signed Operand
 def simm16      : Operand<i32> {
   let DecoderMethod= "DecodeSimm16";
@@ -276,6 +282,40 @@ multiclass StoreM32<bits<8> op, string instr_asm, PatFrag OpNode,
   def #NAME# : StoreM<op, instr_asm, OpNode, CPURegs, mem, Pseudo>;
 }
 
+let Predicates = [Ch8_1] in {
+// Conditional Branch, e.g. BEQ $r1, $r2, brtarget16
+class CBranch16<bits<8> op, string instr_asm, PatFrag cond_op, RegisterClass RC>:
+  FL<op, (outs), (ins RC:$ra, RC:$rb, brtarget16:$imm16),
+             !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
+             [(brcond (i32 (cond_op RC:$ra, RC:$rb)), bb:$imm16)], IIBranch>, 
+             Requires<[HasSlt]> {
+  let isBranch = 1;
+  let isTerminator = 1;
+  let hasDelaySlot = 1;
+  let Defs = [AT];
+}
+}
+
+// SetCC
+let Predicates = [Ch4_2] in {
+class SetCC_R<bits<8> op, string instr_asm, PatFrag cond_op,
+              RegisterClass RC>:
+  FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
+     !strconcat(instr_asm, "\t$ra, $rb, $rc"),
+     [(set GPROut:$ra, (cond_op RC:$rb, RC:$rc))],
+     IIAlu>, Requires<[HasSlt]> {
+  let shamt = 0;
+}
+
+class SetCC_I<bits<8> op, string instr_asm, PatFrag cond_op, Operand Od,
+              PatLeaf imm_type, RegisterClass RC>:
+  FL<op, (outs GPROut:$ra), (ins RC:$rb, Od:$imm16),
+     !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
+     [(set GPROut:$ra, (cond_op RC:$rb, imm_type:$imm16))],
+     IIAlu>, Requires<[HasSlt]> {
+}
+}
+
 //@JumpFR {
 let isBranch=1, isTerminator=1, isBarrier=1, imm16=0, hasDelaySlot = 0,
     isIndirectBranch = 1 in
@@ -353,6 +393,15 @@ def SHLV    : shift_rotate_reg<0x21, 0x00, "shl", shl, CPURegs>;
 def SHRV    : shift_rotate_reg<0x22, 0x00, "shr", srl, CPURegs>;
 }
 
+/// Jump and Branch Instructions
+let Predicates = [Ch8_1] in {
+let Predicates = [HasSlt] in {
+def BEQ     : CBranch16<0x37, "beq", seteq, GPROut>;
+def BNE     : CBranch16<0x39, "bne", setne, GPROut>; // TODO: delete
+def BLT     : CBranch16<0x38, "blt", setlt, GPROut>; // don't have bne
+}
+}
+
 def JR      : JumpFR<0x3c, "jr", GPROut>;
 
 let Predicates = [Ch3_4] in {
@@ -405,14 +454,28 @@ def : Pat<(i32 imm:$imm),
 let Predicates = [Ch6_1] in {
 def : Pat<(Cpu0Hi tglobaladdr:$in), (LUi tglobaladdr:$in)>;
 }
+let Predicates = [Ch8_1] in {
+def : Pat<(Cpu0Hi tblockaddress:$in), (LUi tblockaddress:$in)>;
+def : Pat<(Cpu0Hi tjumptable:$in), (LUi tjumptable:$in)>;
+}
 
 let Predicates = [Ch6_1] in {
 def : Pat<(Cpu0Lo tglobaladdr:$in), (ORi ZR, tglobaladdr:$in)>;
+}
+let Predicates = [Ch8_1] in {
+def : Pat<(Cpu0Lo tblockaddress:$in), (ORi ZR, tblockaddress:$in)>;
+def : Pat<(Cpu0Lo tjumptable:$in), (ORi ZR, tjumptable:$in)>;
 }
 
 let Predicates = [Ch6_1] in {
 def : Pat<(add CPURegs:$hi, (Cpu0Lo tglobaladdr:$lo)),
           (ORi CPURegs:$hi, tglobaladdr:$lo)>;
+}
+let Predicates = [Ch8_1] in {
+def : Pat<(add CPURegs:$hi, (Cpu0Lo tblockaddress:$lo)),
+              (ORi CPURegs:$hi, tblockaddress:$lo)>;
+def : Pat<(add CPURegs:$hi, (Cpu0Lo tjumptable:$lo)),
+              (ORi CPURegs:$hi, tjumptable:$lo)>;
 }
 // gp_rel relocs
 let Predicates = [Ch6_1] in {
@@ -428,6 +491,9 @@ class WrapperPat<SDNode node, Instruction ORiOp, RegisterClass RC>:
 
 def : WrapperPat<tglobaladdr, ORi, GPROut>;
 }
+let Predicates = [Ch8_1] in {
+def : WrapperPat<tjumptable, ORi, GPROut>;
+}
 
 let Predicates = [Ch4_2] in {
 def : Pat<(not CPURegs:$in),
@@ -440,3 +506,50 @@ let Predicates = [Ch7_1] in {
 def : Pat<(zextloadi8 addr:$addr),
           (AND (LB addr:$addr), (ADDiu ZR, 0xFF))>;
 }
+
+// brcond patterns
+let Predicates = [Ch8_1] in {
+
+
+// brcond for slt instruction
+multiclass BrcondPatsSlt<RegisterClass RC, Instruction BEQOp, Instruction BLTop,
+                      Register ZRReg> {
+
+// br imm
+def : Pat<(br bb:$dst),
+              (BEQOp ZRReg, ZRReg, bb:$dst)>;
+
+// beq $r1 $zr imm
+def : Pat<(brcond (i32 (seteq RC:$lhs, 0)), bb:$dst),
+              (BEQOp RC:$lhs, ZRReg, bb:$dst)>;
+
+// bne $r1 $zr imm
+def : Pat<(brcond (i32 (setne RC:$lhs, 0)), bb:$dst),
+              (BNE RC:$lhs, ZRReg, bb:$dst)>;
+
+// beq $r1 $r2 imm  [cmp=cmpunsigned]
+def : Pat<(brcond (i32 (setueq RC:$lhs, RC:$rhs)), bb:$dst),
+              (BEQOp RC:$lhs, RC:$rhs, bb:$dst)>;
+
+// beq $r1 $r2 imm  [cmp=cmpunsigned]
+def : Pat<(brcond (i32 (setune RC:$lhs, RC:$rhs)), bb:$dst),
+              (BNE RC:$lhs, RC:$rhs, bb:$dst)>;
+
+// blt $r1 $r2 imm
+def : Pat<(brcond (i32 (setult RC:$lhs, RC:$rhs)), bb:$dst),
+              (BLT $lhs, $rhs, $dst)>;
+
+// bgt $r1 $r2 imm == blt $r2 $r1 imm
+def : Pat<(brcond (i32 (setugt RC:$lhs, RC:$rhs)), bb:$dst),
+              (BLT $rhs, $lhs, $dst)>;
+
+// TODO: ble $r1 $r2 imm  -> blt $r1 (addiu $r2 1) imm
+}
+
+let Predicates = [HasSlt] in {
+defm : BrcondPatsSlt<CPURegs, BEQ, BLT, ZR>;
+}
+
+} // let Predicates = [Ch8_1]
+
+
