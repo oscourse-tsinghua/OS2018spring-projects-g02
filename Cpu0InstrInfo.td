@@ -435,3 +435,8 @@ def : Pat<(not CPURegs:$in),
           (XOR CPURegs:$in, (ADDiu ZR, -1))>;
 }
 
+// implement lbu on top of lb
+let Predicates = [Ch7_1] in {
+def : Pat<(zextloadi8 addr:$addr),
+          (AND (LB addr:$addr), (ADDiu ZR, 0xFF))>;
+}
