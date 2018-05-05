@@ -10,6 +10,7 @@ entity MEM_WB is
 	port (
 		rst_i: in std_logic;
 		clk_i: in std_logic;
+		halt_i: in std_logic;
 
 		active_i: in std_logic;
 		active_o: out std_logic;
@@ -39,22 +40,24 @@ begin
 	process (clk_i)
 	begin
 		if (rising_edge(clk_i)) then
-			regwr_addr_o <= (others=> '0');
-			regwr_en_o <= '0';
-			regwr_data_o <= (others=> '0');
-			active_o <= '0';
-			jb_en_o <= '0';
-			jb_pc_o <= (others=> '0');
+			if (halt_i = '0') then 
+				regwr_addr_o <= (others=> '0');
+				regwr_en_o <= '0';
+				regwr_data_o <= (others=> '0');
+				active_o <= '0';
+				jb_en_o <= '0';
+				jb_pc_o <= (others=> '0');
 
-			if ((rst_i = '1') or (active_i = '0')) then
-				null;
-			else 
-				regwr_addr_o <= regwr_addr_i;
-				regwr_en_o <= regwr_en_i;
-				regwr_data_o <= regwr_data_i;
-				jb_en_o <= jb_en_i;
-				jb_pc_o <= jb_pc_i;
-				active_o <= '1';
+				if ((rst_i = '1') or (active_i = '0')) then
+					null;
+				else 
+					regwr_addr_o <= regwr_addr_i;
+					regwr_en_o <= regwr_en_i;
+					regwr_data_o <= regwr_data_i;
+					jb_en_o <= jb_en_i;
+					jb_pc_o <= jb_pc_i;
+					active_o <= '1';
+				end if;
 			end if;
 		end if;
 	end process;

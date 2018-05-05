@@ -7,6 +7,7 @@ entity IF_ID is
     port (
 		rst_i: in std_logic; 
 		clk_i: in std_logic;
+		halt_i: in std_logic;
 
 		active_i: in std_logic;
 		active_o: out std_logic;
@@ -26,15 +27,17 @@ begin
 	process (clk_i)
 	begin
 		if (rising_edge(clk_i)) then
-			pc_o <= pc_i;
-			inst_o <= INST_NOP;
-			active_o <= '0';
+			if (halt_i = '0') then
+				pc_o <= pc_i;
+				inst_o <= INST_NOP;
+				active_o <= '0';
 
-			if (rst_i = '1') then
-				null;
-			elsif (active_i = '1') then
-				inst_o <= inst_i;
-				active_o <= '1';
+				if (rst_i = '1') then
+					null;
+				elsif (active_i = '1') then
+					inst_o <= inst_i;
+					active_o <= '1';
+				end if;
 			end if;
 		end if;
 	end process;

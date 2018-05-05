@@ -9,6 +9,8 @@ entity IFF is
 		clk_i: in std_logic;
 		rst_i: in std_logic;
 
+		halt_i: in std_logic;
+		
 		active_o: out std_logic;
 
 		advance_i: in std_logic;
@@ -33,13 +35,15 @@ begin
 			if (rst_i = '1') then
 				pc <= BOOT_PC;
 				active_o <= '1';
-            elsif (advance_i = '1') then
-				if (jb_en_i = '1') then
-					pc <= jb_pc_i;
-				else
-					pc <= std_logic_vector(unsigned(pc) + 4);
+         elsif (halt_i = '0') then
+				if (advance_i = '1') then
+					if (jb_en_i = '1') then	
+						pc <= jb_pc_i;
+					else
+						pc <= std_logic_vector(unsigned(pc) + 4);
+					end if;
+					active_o <= '1';
 				end if;
-				active_o <= '1';
 			end if;
 			-- else: pc should not change
 		end if;

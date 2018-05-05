@@ -27,6 +27,8 @@ end CPU_CORE;
 architecture behave of CPU_CORE is
 
 	signal watch_reg: dword;
+	
+	signal halt: std_logic;
 
 	signal if_active_i: std_logic;
 	signal if_pc_o: mem_addr_t;
@@ -106,6 +108,7 @@ begin
 	port map (
 		rst_i=> rst_i,
 		clk_i=> clk_i,
+		halt_o => halt,
 
 		raddr1_i=> id_reg1_addr_o,
 		rdata1_o=> id_reg1_data_i,
@@ -125,6 +128,7 @@ begin
 	port map (
 		clk_i=> clk_i,
 		rst_i=> rst_i,
+		halt_i=> halt,
 
 		advance_i=> wb_active_i,
 
@@ -142,6 +146,7 @@ begin
 	port map (
 		clk_i=> clk_i,
 		rst_i=> rst_i,
+		halt_i=> halt,
 
 		active_i=> if_active_i,
 		active_o=> id_active_i,
@@ -188,6 +193,7 @@ begin
 	port map (
 		clk_i=> clk_i,
 		rst_i=> rst_i,
+		halt_i=> halt,
 
 		active_i=> id_active_i,
 		active_o=> ex_active_i,
@@ -246,6 +252,7 @@ begin
 	port map (
 		clk_i=> clk_i,
 		rst_i=> rst_i,
+		halt_i=> halt,
 
 		active_i=> ex_active_i,
 		active_o=> mem_active_i,
@@ -294,6 +301,7 @@ begin
 	port map (
 		rst_i=> rst_i,
 		clk_i=> clk_i,
+		halt_i=> halt,
 
 		active_i=> mem_active_i,
 		active_o=> wb_active_i,

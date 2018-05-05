@@ -8,6 +8,7 @@ entity ID_EX is
 	port (
 		clk_i: in std_logic;
 		rst_i: in std_logic;
+		halt_i: in std_logic;
 
 		active_i: in std_logic;
 		active_o: out std_logic;
@@ -49,35 +50,37 @@ begin
 	process (clk_i)
 	begin
 		if (rising_edge(clk_i)) then
-			if ((rst_i = '1') or (active_i = '0')) then
-				alu_v1_o <= (others=> '0');
-				alu_v2_o <= (others=> '0');
-				alu_op_o <= ALUOP_ADD;	-- ALUOP_NOP in fact, but ALUOP_ADD can save resources.
+			if (halt_i = '0') then 
+				if ((rst_i = '1') or (active_i = '0')) then
+					alu_v1_o <= (others=> '0');
+					alu_v2_o <= (others=> '0');
+					alu_op_o <= ALUOP_ADD;	-- ALUOP_NOP in fact, but ALUOP_ADD can save resources.
 
-				regwr_addr_o <= (others=> '0');
-				regwr_en_o <= '0';
+					regwr_addr_o <= (others=> '0');
+					regwr_en_o <= '0';
 
-				active_o <= '0';
+					active_o <= '0';
 
-				ram_mode_o <= RAM_NOP;
-				ram_wdata_o <= (others=> '0');
+					ram_mode_o <= RAM_NOP;
+					ram_wdata_o <= (others=> '0');
 
-				jb_en_o <= '0';
-			else
+					jb_en_o <= '0';
+				else
 
-				alu_v1_o <= alu_v1_i;
-				alu_v2_o <= alu_v2_i;
-				alu_op_o <= alu_op_i;
+					alu_v1_o <= alu_v1_i;
+					alu_v2_o <= alu_v2_i;
+					alu_op_o <= alu_op_i;
 
-				regwr_addr_o <= regwr_addr_i;
-				regwr_en_o <= regwr_en_i;
+					regwr_addr_o <= regwr_addr_i;
+					regwr_en_o <= regwr_en_i;
 
-				jb_en_o <= jb_en_i;
+					jb_en_o <= jb_en_i;
 
-				active_o <= '1';
+					active_o <= '1';
 
-				ram_mode_o <= ram_mode_i;
-				ram_wdata_o <= ram_wdata_i;
+					ram_mode_o <= ram_mode_i;
+					ram_wdata_o <= ram_wdata_i;
+				end if;
 			end if;
 		end if;
 	end process;

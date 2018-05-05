@@ -8,6 +8,7 @@ entity EX_MEM is
 	port (
 		clk_i: in std_logic;
 		rst_i: in std_logic;
+		halt_i: in std_logic;
 
 		active_i: in std_logic;
 		active_o: out std_logic;
@@ -43,31 +44,33 @@ begin
 	process (clk_i)
 	begin
 		if (rising_edge(clk_i)) then
-			if ((rst_i = '1') or (active_i = '0')) then
-				-- TODO: needn't make regwr_addr or alu_data empty here
-				--	because regwr_en gates them.
-				-- This could reduce resource usage.
-				regwr_en_o <= '0';
-				regwr_addr_o <= (others=> '0');
-				alu_data_o <= (others=> '0');
-				active_o <= '0';
-				ram_mode_o <= RAM_NOP;
-				ram_wdata_o <= (others=> '0');
+			if (halt_i = '0') then 
+				if ((rst_i = '1') or (active_i = '0')) then
+					-- TODO: needn't make regwr_addr or alu_data empty here
+					--	because regwr_en gates them.
+					-- This could reduce resource usage.
+					regwr_en_o <= '0';
+					regwr_addr_o <= (others=> '0');
+					alu_data_o <= (others=> '0');
+					active_o <= '0';
+					ram_mode_o <= RAM_NOP;
+					ram_wdata_o <= (others=> '0');
 
-				jb_en_o <= '0';
-				jb_pc_o <= (others=> '0');
-			else
+					jb_en_o <= '0';
+					jb_pc_o <= (others=> '0');
+				else
 
-				regwr_en_o <= regwr_en_i;
-				regwr_addr_o <= regwr_addr_i;
-				alu_data_o <= alu_data_i;
-				active_o <= '1';
+					regwr_en_o <= regwr_en_i;
+					regwr_addr_o <= regwr_addr_i;
+					alu_data_o <= alu_data_i;
+					active_o <= '1';
 
-				jb_en_o <= jb_en_i;
-				jb_pc_o <= jb_pc_i;
+					jb_en_o <= jb_en_i;
+					jb_pc_o <= jb_pc_i;
 
-				ram_mode_o <= ram_mode_i;
-				ram_wdata_o <= ram_wdata_i;
+					ram_mode_o <= ram_mode_i;
+					ram_wdata_o <= ram_wdata_i;
+				end if;
 			end if;
 		end if;
 	end process;
