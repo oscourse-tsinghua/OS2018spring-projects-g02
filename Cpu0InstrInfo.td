@@ -663,9 +663,17 @@ def : Pat<(brcond (i32 (setune RC:$lhs, RC:$rhs)), bb:$dst),
 def : Pat<(brcond (i32 (setult RC:$lhs, RC:$rhs)), bb:$dst),
               (BLT $lhs, $rhs, $dst)>;
 
+// ble $r1 $r2 imm        lhs <= rhs    -> lhs < rhs + 1
+def : Pat<(brcond (i32 (setule RC:$lhs, RC:$rhs)), bb:$dst),
+              (BLT $lhs, (ADDiu $rhs, 1), $dst)>;
+
 // bgt $r1 $r2 imm == blt $r2 $r1 imm
 def : Pat<(brcond (i32 (setugt RC:$lhs, RC:$rhs)), bb:$dst),
               (BLT $rhs, $lhs, $dst)>;
+
+// bge $r1 $r2 imm == blt $r2 $r1+1 imm
+def : Pat<(brcond (i32 (setuge RC:$lhs, RC:$rhs)), bb:$dst),
+              (BLT $rhs, (ADDiu $lhs, 1), $dst)>;
 
 // TODO: ble $r1 $r2 imm  -> blt $r1 (addiu $r2 1) imm
 }
