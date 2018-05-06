@@ -19,7 +19,10 @@ entity CPU_CORE is
 		MEMWData_o: out dword;
 		
 		display_reg_o: out dword;
-		display_inst_o: out dword
+		display_inst_o: out dword;
+		
+		UART1_IN_ready_i: in std_logic;
+		UART1_OUT_ready_i: in std_logic
 	);
 end CPU_CORE;
 
@@ -119,7 +122,10 @@ begin
 		wr_addr_i=> wb_regwr_addr_i,
 		wr_data_i=> wb_regwr_data_i,
 		
-		display_reg_o=> watch_reg
+		display_reg_o=> watch_reg,
+		
+		UART1_IN_ready_i => UART1_IN_ready_i,
+		UART1_OUT_ready_i => UART1_OUT_ready_i
 	);
 
 

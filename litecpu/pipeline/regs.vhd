@@ -21,7 +21,10 @@ entity REGS is
 		-- Deal with interrupts or exceptions --
 		halt_o: out std_logic;
 		
-		display_reg_o: out dword
+		display_reg_o: out dword;
+		
+		UART1_IN_ready_i: in std_logic;
+		UART1_OUT_ready_i: in std_logic
 	);
 end REGS;
 
@@ -37,6 +40,11 @@ architecture behave of REGS is
 	signal real_r2_addr: std_logic_vector(4 downto 0);
 	signal real_wr_addr: std_logic_vector(4 downto 0);
 
+	signal UART1_IN_ready: std_logic := '0';
+	signal UART1_IN_last_ready: std_logic := '0';
+	signal UART1_OUT_ready: std_logic := '0';
+	signal UART1_OUT_last_ready: std_logic := '0';
+	
 begin
 	real_wr_addr <= wr_addr_i(4 downto 0);
 	real_r1_addr <= raddr1_i(4 downto 0);
@@ -46,15 +54,31 @@ begin
 
 	-- writing to ZR and WR will have no effect as their reads are
 	--	hardcoded
-	process (clk_i)
+	process (all)
 	begin
-		if (rising_edge(clk_i)) then
-			if (rst_i = '0') then
-				if (wr_en_i = '1') then
-					regs(to_integer(unsigned(real_wr_addr))) <= wr_data_i;
+		if (rst_i = '1') then 
+			regs(4) <= x"00000200";
+	--	elsif (rising_edge(UART1_IN_ready_i)) then
+	--		UART1_IN_last_ready <= not UART1_IN_ready;
+	--	elsif (rising_edge(UART1_OUT_ready_i)) then
+	--		UART1_OUT_last_ready <= not UART1_OUT_ready; 
+		elsif (rising_edge(clk_i)) then
+			if (wr_en_i = '1') then
+				regs(to_integer(unsigned(real_wr_addr))) <= wr_data_i;
+			end if;
+			if (UART1_IN_last_ready /= UART1_IN_ready) then 
+				regs(4)(10) <= '1';
+				if ((regs(4)(7) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
+					regs(4)(8) <= '1';
 				end if;
-			else 
-				regs(4) <= x"00000200";
+				UART1_IN_ready <= UART1_IN_last_ready;
+			end if;
+			if (UART1_OUT_last_ready /= UART1_OUT_ready) then
+				regs(4)(9) <= '1';
+				if ((regs(4)(5) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
+					regs(4)(6) <= '1';
+				end if;
+				UART1_OUT_ready <= UART1_OUT_last_ready;
 			end if;
 		end if;
 	end process;
