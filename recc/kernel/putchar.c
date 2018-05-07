@@ -32,4 +32,5 @@ int putchar(int c){
 			assert(0 && "Unknown message type.\n");
 		}
 	}
+        return 0;
 }

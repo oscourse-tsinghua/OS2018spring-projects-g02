@@ -28,8 +28,8 @@ struct task_queue blocked_on_send_queue;
 struct task_queue blocked_on_receive_queue;
 struct task_queue blocked_on_reply_queue;
 
-unsigned int g_current_sp;
-unsigned int g_kernel_sp;
+unsigned int* g_current_sp;
+unsigned int* g_kernel_sp;
 
 struct process_control_block pcbs[MAX_NUM_PROCESSES];
 

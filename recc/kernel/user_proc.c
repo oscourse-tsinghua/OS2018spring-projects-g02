@@ -210,7 +210,7 @@ void command_server(void){
 						unsigned int i;
 						printf("\n");
 						for(i = 0; i < 9; i++){
-							printf("Task %d SP: 0x%X\n", i, pcbs[i].stack_pointer);
+							printf("Task %d SP: 0x%X\n", i, (unsigned int)pcbs[i].stack_pointer);
 						}
 						break;
 					}case 112:{/* letter 'p' */

@@ -92,6 +92,7 @@ void * malloc(size_t num_bytes){
 	}else{
 		return (void*)0;
 	}
+        return (void*) 0;
 }
 
 void * realloc(void * ptr, size_t num_bytes){
@@ -146,10 +147,10 @@ void free(void * ptr){
 					used_flags[index] = 0;/*  Deallocate */
 				}
 			}else{
-				assert(0 && "Index %d is not allocated.\n", index);
+				assert(0 && "Index is not allocated.\n");
 			}
 		}else{
-			assert(0 && "Unknown index for deallocation: %d\n", index);
+			assert(0 && "Unknown index for deallocation\n");
 		}
 	}
 }

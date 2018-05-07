@@ -173,11 +173,11 @@ void handle_page_fault_exception(void){
 	unsigned int level_2_page_table_entry = pfe_page_pointer[level_2_index];
 	printf_busy("A Page fault exception occurred originating from PC location 0x%X, seeking 0x%X access.\n", pfe_pc_value, pfe_access);
 	printf_busy("Virtual address 0x%X gives lvl 2 index 0x%X and lvl 1 index 0x%X and offset 0x%X using 0x%X as lvl 2 page table pointer\n", pfe_virtual, level_2_index, level_1_index, offset, level_2_page_table_entry);
-	///*  Make sure we have access to this level 2 page table entry, and that it is valid 
+	//  Make sure we have access to this level 2 page table entry, and that it is valid 
 	if(level_2_page_table_entry & LEVEL_2_PAGE_TABLE_ENTRY_INITIALIZED){
 		unsigned int * level_1_page_table_pointer = (unsigned int*)(level_2_page_table_entry & (LEVEL_1_PAGE_TABLE_INDEX_MASK | LEVEL_2_PAGE_TABLE_INDEX_MASK));
 		unsigned int level_1_page_table_entry = level_1_page_table_pointer[level_1_index];
-		///*  Make sure we have access to this level 1 page table entry, and that it is valid 
+		//  Make sure we have access to this level 1 page table entry, and that it is valid 
 		if((level_1_page_table_entry & pfe_access) && (level_1_page_table_entry & LEVEL_2_PAGE_TABLE_ENTRY_INITIALIZED)){
 			unsigned int linear_address_page = level_1_page_table_entry & (LEVEL_1_PAGE_TABLE_INDEX_MASK | LEVEL_2_PAGE_TABLE_INDEX_MASK);
 			printf_busy("Should not occur, no PFE: address was translated to 0x%X\n", linear_address_page + offset);
@@ -289,19 +289,19 @@ void set_level_2_page_pointer(unsigned int * pointer){
 	printf_busy("Page ptr is %p\n", pointer);
 }
 */
-unsigned int timer_interrupt_enable(void){
+void timer_interrupt_enable(void){
 	or_into_flags_register(TIMER1_ENABLE_BIT);
 }
 
-unsigned int uart1_out_interrupt_enable(void){
+void uart1_out_interrupt_enable(void){
 	or_into_flags_register(UART1_OUT_ENABLE_BIT);
 }
 
-unsigned int uart1_in_interrupt_enable(void){
+void uart1_in_interrupt_enable(void){
 	or_into_flags_register(UART1_IN_ENABLE_BIT);
 }
 
-unsigned int page_fault_exception_interrupt_enable(void){
+void page_fault_exception_interrupt_enable(void){
 	or_into_flags_register(PAGEING_ENABLE_BIT);
 }
 /*
@@ -310,7 +310,7 @@ unsigned int * allocate_level_1_page_table(void){
 	if((num_level_1_page_table_mappings_used + pages_in_table) <= MAX_LEVEL_1_PAGE_TABLE_MAPPINGS){
 		unsigned int * rtn = &level_1_page_table_mappings[num_level_1_page_table_mappings_used];
 		unsigned int i;
-		/*  Intitialize entries 
+		//  Intitialize entries 
 		for(i = num_level_1_page_table_mappings_used; i < (num_level_1_page_table_mappings_used + pages_in_table); i++){
 			level_1_page_table_mappings[i] = 0;
 		}
@@ -327,7 +327,7 @@ unsigned int * allocate_level_2_page_table(void){
 	if((num_level_2_page_table_mappings_used + pages_in_table) <= MAX_LEVEL_2_PAGE_TABLE_MAPPINGS){
 		unsigned int * rtn = &level_2_page_table_mappings[num_level_2_page_table_mappings_used];
 		unsigned int i;
-		/*  Intitialize entries 
+		//  Intitialize entries 
 		for(i = num_level_2_page_table_mappings_used; i < (num_level_2_page_table_mappings_used + pages_in_table); i++){
 			level_2_page_table_mappings[i] = 0;
 		}
@@ -344,12 +344,12 @@ void create_level_1_page_table_entry(unsigned int * level_2_page_table_entry, un
 	if(!(*level_2_page_table_entry & LEVEL_2_PAGE_TABLE_ENTRY_INITIALIZED)){
 		unsigned int * new_page_table_ptr = allocate_level_1_page_table();
 		*level_2_page_table_entry = ((unsigned int)new_page_table_ptr | LEVEL_2_PAGE_TABLE_ENTRY_INITIALIZED);
-		/*printf_busy("Initialized to 0x%X\n", *level_2_page_table_entry);
+		//printf_busy("Initialized to 0x%X\n", *level_2_page_table_entry);
 	}
 	level_1_table_ptr = (unsigned int *)((LEVEL_2_PAGE_TABLE_INDEX_MASK | LEVEL_1_PAGE_TABLE_INDEX_MASK) & (*level_2_page_table_entry));
-	/*  Linear address is expected to be a page aligned address with only the high bits set. 
+	//  Linear address is expected to be a page aligned address with only the high bits set. 
 	level_1_table_ptr[level_1_index] = linear_address | permissions | LEVEL_1_PAGE_TABLE_ENTRY_INITIALIZED;
-	/*printf_busy("Intialized l2 pt entry %p that points to l1 pt %p and set l1 pt entry %d to be %X\n", level_2_page_table_entry, level_1_table_ptr, level_1_index, level_1_table_ptr[level_1_index]);
+	//printf_busy("Intialized l2 pt entry %p that points to l1 pt %p and set l1 pt entry %d to be %X\n", level_2_page_table_entry, level_1_table_ptr, level_1_index, level_1_table_ptr[level_1_index]);
 }
 
 void create_level_2_page_table_entry(unsigned int linear_address, unsigned int virtual_address, unsigned int permissions, unsigned int * level_2_page_table){
@@ -374,9 +374,9 @@ void k_kernel_init(void){
 	printf_busy("Begin kernel initialization...\n");
         printf_busy("num_l0_items: %d\n", num_l0_items);
 	for(i = 0; i < num_l0_items; i++){
-		/*  Assuming that regions are specified first 
+		//  Assuming that regions are specified first 
 		if(data[i][0] == 5){
-			/*  No more regions, looking at symbol definitions now. 
+			//  No more regions, looking at symbol definitions now. 
 			break;
 		}else if(data[i][0] == 0xE){
 			unsigned int start;
