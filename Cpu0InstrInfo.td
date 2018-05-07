@@ -233,10 +233,10 @@ def store_a         : AlignedStore<store>;
 let Predicates = [Ch3_5] in {
 // Arithmetic and logical instructions with 3 register operands.
 class ArithLogicR<bits<8> op, string instr_asm, SDNode OpNode,
-                  InstrItinClass itin, RegisterClass RC, bit isComm = 0>:
+                  RegisterClass RC, bit isComm = 0>:
   FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
      !strconcat(instr_asm, "\t$ra, $rb, $rc"),
-     [(set GPROut:$ra, (OpNode RC:$rb, RC:$rc))], itin> {
+     [(set GPROut:$ra, (OpNode RC:$rb, RC:$rc))]> {
   let shamt = 0;
   let isCommutable = isComm;	// e.g. add rb rc =  add rc rb
   let isReMaterializable = 1;
@@ -248,7 +248,7 @@ class ArithLogicI<bits<8> op, string instr_asm, SDNode OpNode,
                   Operand Od, PatLeaf imm_type, RegisterClass RC> :
   FL<op, (outs GPROut:$ra), (ins RC:$rb, Od:$imm16),
      !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
-     [(set GPROut:$ra, (OpNode RC:$rb, imm_type:$imm16))], IIAlu> {
+     [(set GPROut:$ra, (OpNode RC:$rb, imm_type:$imm16))]> {
   let isReMaterializable = 1;
 }
 
@@ -259,7 +259,7 @@ class shift_rotate_imm<bits<8> op, bits<4> isRotate, string instr_asm,
                        RegisterClass RC>:
   FA<op, (outs GPROut:$ra), (ins RC:$rb, ImmOpnd:$shamt),
      !strconcat(instr_asm, "\t$ra, $rb, $shamt"),
-     [(set GPROut:$ra, (OpNode RC:$rb, PF:$shamt))], IIAlu> {
+     [(set GPROut:$ra, (OpNode RC:$rb, PF:$shamt))]> {
   let rc = 0;
 }
 }
@@ -269,7 +269,7 @@ class shift_rotate_reg<bits<8> op, bits<4> isRotate, string instr_asm,
                        SDNode OpNode, RegisterClass RC>:
   FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
      !strconcat(instr_asm, "\t$ra, $rb, $rc"),
-     [(set GPROut:$ra, (OpNode RC:$rb, RC:$rc))], IIAlu> {
+     [(set GPROut:$ra, (OpNode RC:$rb, RC:$rc))]> {
   let shamt = 0;
 }
 }
@@ -278,14 +278,14 @@ let Predicates = [Ch3_5] in {
 // Load Upper Imediate
 class LoadUpper<bits<8> op, string instr_asm, RegisterClass RC, Operand Imm>:
   FL<op, (outs RC:$ra), (ins Imm:$imm16),
-     !strconcat(instr_asm, "\t$ra, $imm16"), [], IIAlu> {
+     !strconcat(instr_asm, "\t$ra, $imm16"), []> {
   let rb = 0;
   let isReMaterializable = 1;
 }
 }
 
-class FMem<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern,
-          InstrItinClass itin>: FL<op, outs, ins, asmstr, pattern, itin> {
+class FMem<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>:
+  FL<op, outs, ins, asmstr, pattern> {
   bits<20> addr;
   let Inst{19-16} = addr{19-16};
   let Inst{15-0}  = addr{15-0};
@@ -298,7 +298,7 @@ class LoadM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
             Operand MemOpnd, bit Pseudo>:
   FMem<op, (outs RC:$ra), (ins MemOpnd:$addr),
      !strconcat(instr_asm, "\t$ra, $addr"),
-     [(set RC:$ra, (OpNode addr:$addr))], IILoad> {
+     [(set RC:$ra, (OpNode addr:$addr))]> {
   let isPseudo = Pseudo;
 }
 
@@ -306,7 +306,7 @@ class StoreM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
              Operand MemOpnd, bit Pseudo>:
   FMem<op, (outs), (ins RC:$ra, MemOpnd:$addr),
      !strconcat(instr_asm, "\t$ra, $addr"),
-     [(OpNode RC:$ra, addr:$addr)], IIStore> {
+     [(OpNode RC:$ra, addr:$addr)]> {
   let isPseudo = Pseudo;
 }
 
@@ -327,7 +327,7 @@ let Predicates = [Ch8_1] in {
 class CBranch16<bits<8> op, string instr_asm, PatFrag cond_op, RegisterClass RC>:
   FL<op, (outs), (ins RC:$ra, RC:$rb, brtarget16:$imm16),
              !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
-             [(brcond (i32 (cond_op RC:$ra, RC:$rb)), bb:$imm16)], IIBranch>, 
+             [(brcond (i32 (cond_op RC:$ra, RC:$rb)), bb:$imm16)]>, 
              Requires<[HasSlt]> {
   let isBranch = 1;
   let isTerminator = 1;
@@ -342,8 +342,8 @@ class SetCC_R<bits<8> op, string instr_asm, PatFrag cond_op,
               RegisterClass RC>:
   FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
      !strconcat(instr_asm, "\t$ra, $rb, $rc"),
-     [(set GPROut:$ra, (cond_op RC:$rb, RC:$rc))],
-     IIAlu>, Requires<[HasSlt]> {
+     [(set GPROut:$ra, (cond_op RC:$rb, RC:$rc))]>,
+     Requires<[HasSlt]> {
   let shamt = 0;
 }
 
@@ -351,8 +351,7 @@ class SetCC_I<bits<8> op, string instr_asm, PatFrag cond_op, Operand Od,
               PatLeaf imm_type, RegisterClass RC>:
   FL<op, (outs GPROut:$ra), (ins RC:$rb, Od:$imm16),
      !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
-     [(set GPROut:$ra, (cond_op RC:$rb, imm_type:$imm16))],
-     IIAlu>, Requires<[HasSlt]> {
+     [(set GPROut:$ra, (cond_op RC:$rb, imm_type:$imm16))]>, Requires<[HasSlt]> {
 }
 }
 
@@ -361,7 +360,7 @@ let isBranch=1, isTerminator=1, isBarrier=1, imm16=0, hasDelaySlot = 0,
     isIndirectBranch = 1 in
 class JumpFR<bits<8> op, string instr_asm, RegisterClass RC>:
   FL<op, (outs), (ins RC:$ra),
-     !strconcat(instr_asm, "\t$ra"), [(brind RC:$ra)], IIBranch> {
+     !strconcat(instr_asm, "\t$ra"), [(brind RC:$ra)]> {
   let rb = 0;
   let imm16 = 0;
 }
@@ -381,7 +380,7 @@ let isCall=1, hasDelaySlot=1 in {
   class JumpLinkReg<bits<8> op, string instr_asm,
                     RegisterClass RC>:
     FA<op, (outs), (ins RC:$rb, variable_ops),
-       !strconcat(instr_asm, "\t$rb"), [(Cpu0JmpLink RC:$rb)], IIBranch> {
+       !strconcat(instr_asm, "\t$rb"), [(Cpu0JmpLink RC:$rb)]> {
     let rc = 0;
     let ra = 14;
     let shamt = 0;
@@ -392,12 +391,12 @@ let isCall=1, hasDelaySlot=1 in {
 let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1, hasDelaySlot = 1,
     hasExtraSrcRegAllocReq = 1, Defs = [AT] in {
   class TailCall<Instruction JumpInst> :
-    PseudoSE<(outs), (ins calltarget:$target), [], IIBranch>,
+    PseudoSE<(outs), (ins calltarget:$target), []>,
     PseudoInstExpansion<(JumpInst jmptarget:$target)>;
 
   class TailCallReg<RegisterClass RO, Instruction JRInst,
                     RegisterClass ResRO = RO> :
-    PseudoSE<(outs), (ins RO:$rs), [(Cpu0TailCall RO:$rs)], IIBranch>,
+    PseudoSE<(outs), (ins RO:$rs), [(Cpu0TailCall RO:$rs)]>,
     PseudoInstExpansion<(JRInst ResRO:$rs)>;
 }
 } // let Predicates = [Ch9_1]
@@ -406,7 +405,7 @@ let Predicates = [Ch7_1] in {
 //@EffectiveAddress
 class EffectiveAddress<string instr_asm, RegisterClass RC, Operand Mem> :
   FMem<0x09, (outs RC:$ra), (ins Mem:$addr),
-     instr_asm, [(set RC:$ra, addr:$addr)], IIAlu>;
+     instr_asm, [(set RC:$ra, addr:$addr)]>;
 }
 
 //===----------------------------------------------------------------------===//
@@ -464,20 +463,20 @@ def LUi     : LoadUpper<0x0f, "lui", GPROut, uimm16>;
 /// Arithmetic Instructions (3-Operand, R-Type)
 let Predicates = [Ch3_5] in {
 let Predicates = [DisableOverflow] in {
-def ADDu    : ArithLogicR<0x11, "add", add, IIAlu, CPURegs, 1>;
+def ADDu    : ArithLogicR<0x11, "add", add, CPURegs, 1>;
 }
 }
 let Predicates = [Ch4_1] in {
 let Predicates = [DisableOverflow] in {
-def SUBu    : ArithLogicR<0x12, "sub", sub, IIAlu, CPURegs>;
-def MULu    : ArithLogicR<0x17, "mul", mul, IIImul, CPURegs>;
+def SUBu    : ArithLogicR<0x12, "sub", sub, CPURegs>;
+def MULu    : ArithLogicR<0x17, "mul", mul, CPURegs>;
 }
 }
 
 let Predicates = [Ch4_2] in {
-def AND     : ArithLogicR<0x18, "and", and, IIAlu, CPURegs, 1>;
-def OR      : ArithLogicR<0x19, "or", or, IIAlu, CPURegs, 1>;
-def XOR     : ArithLogicR<0x1a, "xor", xor, IIAlu, CPURegs, 1>;
+def AND     : ArithLogicR<0x18, "and", and, CPURegs, 1>;
+def OR      : ArithLogicR<0x19, "or", or, CPURegs, 1>;
+def XOR     : ArithLogicR<0x1a, "xor", xor, CPURegs, 1>;
 }
 
 /// Shift Instructions
@@ -508,7 +507,7 @@ let Predicates = [Ch9_1] in {
 def JALR    : JumpLinkReg<0x39, "jalr", GPROut>;
 }
 
-// def NOP: FA<0, (outs), (ins), "nop", [], IIAlu>;
+// def NOP: FA<0, (outs), (ins), "nop", []>;
 
 let Predicates = [Ch9_1] in {
 // def TAILCALL : TailCall<JMP>;

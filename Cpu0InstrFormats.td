@@ -20,10 +20,11 @@ def Cpu0IEF_A: Cpu0InstrEncFormat<1>;
 def Cpu0IEF_B: Cpu0InstrEncFormat<2>;
 
 
-class Cpu0Inst<dag outs, dag ins, string asmstr, list<dag> pattern,
-               InstrItinClass itin, Cpu0InstrEncFormat f>: Instruction
+class Cpu0Inst<dag outs, dag ins, string asmstr,
+    list<dag> pattern, Cpu0InstrEncFormat f>: Instruction
 {
   field bits<32> Inst;
+
   Cpu0InstrEncFormat Form = f;
 
   let Namespace = "Cpu0";
@@ -40,7 +41,6 @@ class Cpu0Inst<dag outs, dag ins, string asmstr, list<dag> pattern,
 
   let AsmString   = asmstr;
   let Pattern     = pattern;
-  let Itinerary   = itin;
 
   //
   // Attributes specific to Cpu0 instructions...
@@ -57,21 +57,20 @@ class Cpu0Inst<dag outs, dag ins, string asmstr, list<dag> pattern,
 
 
 class Cpu0Pseudo<dag outs, dag ins, string asmstr, list<dag> pattern>:
-      Cpu0Inst<outs, ins, asmstr, pattern, IIPseudo, Cpu0IEF_Pseudo> {
+      Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_Pseudo> {
   let isCodeGenOnly = 1;
   let isPseudo = 1;
 }
 
 
-class PseudoSE<dag outs, dag ins, list<dag> pattern,
-               InstrItinClass itin = IIPseudo> :
+class PseudoSE<dag outs, dag ins, list<dag> pattern>:
   Cpu0Pseudo<outs, ins, "", pattern> {
 }
 
 
 class FA<bits<8> op, dag outs, dag ins, string asmstr,
-         list<dag> pattern, InstrItinClass itin>:
-      Cpu0Inst<outs, ins, asmstr, pattern, itin, Cpu0IEF_A>
+         list<dag> pattern>:
+      Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_A>
 {
   bits<4>  ra;
   bits<4>  rb;
@@ -87,8 +86,8 @@ class FA<bits<8> op, dag outs, dag ins, string asmstr,
 }
 
 
-class FL<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern,
-         InstrItinClass itin>: Cpu0Inst<outs, ins, asmstr, pattern, itin, Cpu0IEF_B>
+class FL<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>: 
+  Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_B>
 {
   bits<4>  ra;
   bits<4>  rb;

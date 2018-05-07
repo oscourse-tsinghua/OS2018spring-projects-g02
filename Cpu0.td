@@ -7,13 +7,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-//===----------------------------------------------------------------------===//
-// Calling Conv, Instruction Descriptions
-//===----------------------------------------------------------------------===//
-
-include "Cpu0Schedule.td"
 include "Cpu0InstrInfo.td"
 include "Cpu0CallingConv.td"
+
 
 def Cpu0InstrInfo : InstrInfo;
 
@@ -91,7 +87,7 @@ def FeatureCpu032II    : SubtargetFeature<"cpu032II", "Cpu0ArchVersion",
 //===----------------------------------------------------------------------===//
 
 class Proc<string Name, list<SubtargetFeature> Features>
- : Processor<Name, Cpu0GenericItineraries, Features>;
+ : Processor<Name, NoItineraries, Features>;
 
 def : Proc<"cpu032I",  [FeatureCpu032I]>;
 def : Proc<"cpu032II", [FeatureCpu032II]>;
