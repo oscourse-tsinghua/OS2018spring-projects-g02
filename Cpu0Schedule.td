@@ -25,7 +25,6 @@ def IIHiLo             : InstrItinClass;
 def IIImul             : InstrItinClass;
 def IIIdiv             : InstrItinClass;
 def IIBranch           : InstrItinClass;
-
 def IIPseudo           : InstrItinClass;
 
 //===----------------------------------------------------------------------===//

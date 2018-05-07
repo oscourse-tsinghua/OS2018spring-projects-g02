@@ -7,38 +7,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-//===----------------------------------------------------------------------===//
-//  Describe CPU0 instructions format
-//
-//  CPU INSTRUCTION FORMATS
-//
-//  opcode  - operation code.
-//  ra      - dst reg, only used on 3 regs instr.
-//  rb      - src reg.
-//  rc      - src reg (on a 3 reg instr).
-//  cx      - immediate
-//
-//===----------------------------------------------------------------------===//
 
-// Format specifies the encoding used by the instruction.  This is part of the
-// ad-hoc solution used to emit machine instruction encodings by our machine
-// code emitter.
-class Format<bits<4> val> {
+// Each Cpu0InstrEncFormat instance represent an instruction encoding
+//  format for Cpu0.
+class Cpu0InstrEncFormat<bits<4> val> {
   bits<4> Value = val;
 }
 
-def Pseudo    : Format<0>;
-def FrmA      : Format<1>;
-def FrmL      : Format<2>;
-def FrmJ      : Format<3>;
-def FrmOther  : Format<4>; // Instruction w/ a custom format
 
-// Generic Cpu0 Format
+def Cpu0IEF_Pseudo: Cpu0InstrEncFormat<0>;
+def Cpu0IEF_A: Cpu0InstrEncFormat<1>;
+def Cpu0IEF_B: Cpu0InstrEncFormat<2>;
+
+
 class Cpu0Inst<dag outs, dag ins, string asmstr, list<dag> pattern,
-               InstrItinClass itin, Format f>: Instruction
+               InstrItinClass itin, Cpu0InstrEncFormat f>: Instruction
 {
   field bits<32> Inst;
-  Format Form = f;
+  Cpu0InstrEncFormat Form = f;
 
   let Namespace = "Cpu0";
 
@@ -48,7 +34,7 @@ class Cpu0Inst<dag outs, dag ins, string asmstr, list<dag> pattern,
 
   // Top 8 bits are the 'opcode' field
   let Inst{31-24} = Opcode;
-
+      
   let OutOperandList = outs;
   let InOperandList  = ins;
 
@@ -69,26 +55,23 @@ class Cpu0Inst<dag outs, dag ins, string asmstr, list<dag> pattern,
   field bits<32> SoftFail = 0;
 }
 
-// Cpu0 Pseudo Instructions Format
+
 class Cpu0Pseudo<dag outs, dag ins, string asmstr, list<dag> pattern>:
-      Cpu0Inst<outs, ins, asmstr, pattern, IIPseudo, Pseudo> {
+      Cpu0Inst<outs, ins, asmstr, pattern, IIPseudo, Cpu0IEF_Pseudo> {
   let isCodeGenOnly = 1;
   let isPseudo = 1;
 }
 
-// Cpu032 Pseudo Instruction Format
+
 class PseudoSE<dag outs, dag ins, list<dag> pattern,
                InstrItinClass itin = IIPseudo> :
   Cpu0Pseudo<outs, ins, "", pattern> {
 }
 
-//===----------------------------------------------------------------------===//
-// Format A instruction class in Cpu0 : <|opcode|ra|rb|rc|cx|>
-//===----------------------------------------------------------------------===//
 
 class FA<bits<8> op, dag outs, dag ins, string asmstr,
          list<dag> pattern, InstrItinClass itin>:
-      Cpu0Inst<outs, ins, asmstr, pattern, itin, FrmA>
+      Cpu0Inst<outs, ins, asmstr, pattern, itin, Cpu0IEF_A>
 {
   bits<4>  ra;
   bits<4>  rb;
@@ -103,13 +86,9 @@ class FA<bits<8> op, dag outs, dag ins, string asmstr,
   let Inst{11-0}  = shamt;
 }
 
-//@class FL {
-//===----------------------------------------------------------------------===//
-// Format L instruction class in Cpu0 : <|opcode|ra|rb|cx|>
-//===----------------------------------------------------------------------===//
 
 class FL<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern,
-         InstrItinClass itin>: Cpu0Inst<outs, ins, asmstr, pattern, itin, FrmL>
+         InstrItinClass itin>: Cpu0Inst<outs, ins, asmstr, pattern, itin, Cpu0IEF_B>
 {
   bits<4>  ra;
   bits<4>  rb;
@@ -120,20 +99,5 @@ class FL<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern,
   let Inst{23-20} = ra;
   let Inst{19-16} = rb;
   let Inst{15-0}  = imm16;
-}
-//@class FL }
-
-//===----------------------------------------------------------------------===//
-// Format J instruction class in Cpu0 : <|opcode|address|>
-//===----------------------------------------------------------------------===//
-
-class FJ<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern,
-         InstrItinClass itin>: Cpu0Inst<outs, ins, asmstr, pattern, itin, FrmJ>
-{
-  bits<24> addr;
-
-  let Opcode = op;
-
-  let Inst{23-0} = addr;
 }
 

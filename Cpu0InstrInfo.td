@@ -378,14 +378,6 @@ class RetBase<RegisterClass RC>: JumpFR<0x3c, "ret", RC> {
 let Predicates = [Ch9_1] in {
 // Jump and Link (Call)
 let isCall=1, hasDelaySlot=1 in {
-  //@JumpLink {
-  class JumpLink<bits<8> op, string instr_asm>:
-    FJ<op, (outs), (ins calltarget:$target, variable_ops),
-       !strconcat(instr_asm, "\t$target"), [(Cpu0JmpLink imm:$target)],
-       IIBranch> {
-       }
-  //@JumpLink }
-
   class JumpLinkReg<bits<8> op, string instr_asm,
                     RegisterClass RC>:
     FA<op, (outs), (ins RC:$rb, variable_ops),
@@ -516,9 +508,7 @@ let Predicates = [Ch9_1] in {
 def JALR    : JumpLinkReg<0x39, "jalr", GPROut>;
 }
 
-/// No operation
-let addr=0 in
-  def NOP   : FJ<0, (outs), (ins), "nop", [], IIAlu>;
+// def NOP: FA<0, (outs), (ins), "nop", [], IIAlu>;
 
 let Predicates = [Ch9_1] in {
 // def TAILCALL : TailCall<JMP>;

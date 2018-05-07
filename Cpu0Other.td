@@ -6,20 +6,13 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-// This is the top level entry point for the Cpu0 target.
-//===----------------------------------------------------------------------===//
 
-//===----------------------------------------------------------------------===//
+
 // Target-independent interfaces
-//===----------------------------------------------------------------------===//
-
 include "llvm/Target/Target.td"
 
-//===----------------------------------------------------------------------===//
-// Target-dependent interfaces
-//===----------------------------------------------------------------------===//
 
+// Target-dependent interfaces
 include "Cpu0RegisterInfo.td"
-include "Cpu0RegisterInfoGPROutForOther.td" // except AsmParser
 include "Cpu0.td"
 
