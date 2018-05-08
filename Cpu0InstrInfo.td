@@ -275,9 +275,8 @@ class EffectiveAddress<string instr_asm, RegisterClass RC, Operand Mem>:
   FMem<0x09, (outs RC:$ra), (ins Mem:$addr),
      instr_asm, [(set RC:$ra, addr:$addr)]>;
 
-//===----------------------------------------------------------------------===//
+// ****************************************************************************
 // Pseudo instructions
-//===----------------------------------------------------------------------===//
 
 // As stack alignment is always done with addiu, we need a 16-bit immediate
 let Defs = [SP], Uses = [SP] in {
@@ -301,32 +300,31 @@ def CPRESTORE : Cpu0Instr_Pseudo<(outs), (ins i32imm:$loc, CPURegs:$gp),
 // ****************************************************************************
 // Instruction definition
 
-// Cpu0 Instructions
-def LD     : LoadM<0x01,  "loa",  load_a, GPROut, mem>;
-def ST     : StoreM<0x02, "sto",  store_a, CPURegs, mem>;
-def LB     : LoadM<0x04, "lb", sextloadi8, GPROut, mem>;
-def SB     : StoreM<0x05, "sb", truncstorei8, CPURegs, mem>;
-
-def ADDiu   : ArithLogic_RRI<0x09, "addi", add, simm16, immSExt16, CPURegs>;
-def ORi     : ArithLogic_RRI<0x0d, "ori", or, uimm16, immZExt16, CPURegs>;
+def ADDiu   : ArithLogic_RRI<0xaa, "addi", add, simm16, immSExt16, CPURegs>;
+def ORi     : ArithLogic_RRI<0xf0, "ori", or, uimm16, immZExt16, CPURegs>;
+def LUi     : LoadUpper<0xf1, "lui", GPROut, uimm16>;
 
 def ADDu    : ArithLogicInstr_RRR<0x11, "add", add, CPURegs, 1>;
 def SUBu    : ArithLogicInstr_RRR<0x12, "sub", sub, CPURegs>;
-def MULu    : ArithLogicInstr_RRR<0x17, "mul", mul, CPURegs>;
+def MULu    : ArithLogicInstr_RRR<0x13, "mul", mul, CPURegs>;
+
 def AND     : ArithLogicInstr_RRR<0x18, "and", and, CPURegs, 1>;
 def OR      : ArithLogicInstr_RRR<0x19, "or", or, CPURegs, 1>;
 def XOR     : ArithLogicInstr_RRR<0x1a, "xor", xor, CPURegs, 1>;
-def SHLV    : ArithLogicInstr_RRR<0x21, "shl", shl, CPURegs>;
-def SHRV    : ArithLogicInstr_RRR<0x22, "shr", srl, CPURegs>;
+def SHLV    : ArithLogicInstr_RRR<0x1b, "shl", shl, CPURegs>;
+def SHRV    : ArithLogicInstr_RRR<0x1c, "shr", srl, CPURegs>;
 
-def LUi     : LoadUpper<0x0f, "lui", GPROut, uimm16>;
+def LD     : LoadM<0x01,  "loa",  load_a, GPROut, mem>;
+def ST     : StoreM<0x02, "sto",  store_a, CPURegs, mem>;
+def LB     : LoadM<0x03, "lb", sextloadi8, GPROut, mem>;
+def SB     : StoreM<0x04, "sb", truncstorei8, CPURegs, mem>;
 
-def BEQ     : CBranch16<0x37, "beq", seteq, GPROut>;
-def BNE     : CBranch16<0x39, "bne", setne, GPROut>; // TODO: delete
-def BLT     : CBranch16<0x38, "blt", setult, GPROut>; // don't have bne
+def BEQ     : CBranch16<0x31, "beq", seteq, GPROut>;
+def BNE     : CBranch16<0x32, "bne", setne, GPROut>; // TODO: delete
+def BLT     : CBranch16<0x33, "blt", setult, GPROut>;
 
-def JR      : JumpFR<0x3c, "jr", GPROut>;
-def JALR    : JumpLinkReg<0x39, "jalr", GPROut>;
+def JR      : JumpFR<0x34, "jr", GPROut>;
+def JALR    : JumpLinkReg<0x35, "jalr", GPROut>;
 
 let isReturn=1, isTerminator=1, hasDelaySlot=0, isBarrier=1, hasCtrlDep=1 in
   def RetLR : Cpu0Instr_Pseudo<(outs), (ins), "", [(Cpu0Ret)]>;

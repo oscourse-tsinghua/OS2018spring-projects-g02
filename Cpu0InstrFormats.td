@@ -52,11 +52,10 @@ class Cpu0Instr_PseudoSE<dag outs, dag ins, list<dag> pattern>:
 }
 
 
-class FA<bits<8> op, dag outs, dag ins, string asmstr,
+class FA<bits<8> opcode, dag outs, dag ins, string asmstr,
          list<dag> pattern>:
       Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_A>
 {
-  bits<8>  opcode;
   bits<4>  ra;
   bits<4>  rb;
   bits<4>  rc;
@@ -70,10 +69,9 @@ class FA<bits<8> op, dag outs, dag ins, string asmstr,
 }
 
 
-class FL<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>: 
+class FL<bits<8> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>: 
   Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_B>
 {
-  bits<8> opcode;
   bits<4>  ra;
   bits<4>  rb;
   bits<16> imm16;
