@@ -69,22 +69,11 @@ encodeInstruction(const MCInst &MI, raw_ostream &OS,
 {
   uint32_t Binary = getBinaryCodeForInstr(MI, Fixups, STI);
 
-  // Check for unimplemented opcodes.
-  // Unfortunately in CPU0 both NOT and SLL will come in with Binary == 0
-  // so we have to special check for them.
-	// 
-	// The concern is for MIPS. Don't care for CPU0.
-	//
-//  unsigned Opcode = MI.getOpcode();
-//  if ((Opcode != Cpu0::NOP) && (Opcode != Cpu0::SHL) && !Binary)
-//    llvm_unreachable("unimplemented opcode in encodeInstruction()");
-
   const MCInstrDesc &Desc = MCII.get(MI.getOpcode());
   uint64_t TSFlags = Desc.TSFlags;
 
-  // Pseudo instructions don't get encoded and shouldn't be here
-  // in the first place!
-  if ((TSFlags & Cpu0II::FormMask) == Cpu0II::Pseudo)
+  // No pseudo instructions will get emitted
+  if ((TSFlags & Cpu0II::IEF_Mask) == Cpu0II::IEF_Pseudo)
     llvm_unreachable("Pseudo opcode found in encodeInstruction()");
 
   // For now all instructions are 4 bytes

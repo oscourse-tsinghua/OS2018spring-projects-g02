@@ -21,50 +21,34 @@ def Cpu0IEF_B: Cpu0InstrEncFormat<2>;
 
 
 class Cpu0Inst<dag outs, dag ins, string asmstr,
-    list<dag> pattern, Cpu0InstrEncFormat f>: Instruction
+    list<dag> pattern, Cpu0InstrEncFormat IEF>: Instruction
 {
-  field bits<32> Inst;
-
-  Cpu0InstrEncFormat Form = f;
-
   let Namespace = "Cpu0";
-
+  let DecoderNamespace = "Cpu0";
   let Size = 4;
 
-  bits<8> Opcode = 0;
-
-  // Top 8 bits are the 'opcode' field
-  let Inst{31-24} = Opcode;
-      
   let OutOperandList = outs;
   let InOperandList  = ins;
-
   let AsmString   = asmstr;
   let Pattern     = pattern;
 
-  //
-  // Attributes specific to Cpu0 instructions...
-  //
-  bits<4> FormBits = Form.Value;
+  field bits<32> Inst;
 
-  // TSFlags layout should be kept in sync with Cpu0InstrInfo.h.
-  let TSFlags{3-0}   = FormBits;
-
-  let DecoderNamespace = "Cpu0";
-
-  field bits<32> SoftFail = 0;
+  // Used to identify the instruction format
+  let TSFlags{3-0}   = IEF.Value;
 }
 
 
-class Cpu0Pseudo<dag outs, dag ins, string asmstr, list<dag> pattern>:
-      Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_Pseudo> {
+class Cpu0Instr_Pseudo<dag outs, dag ins,string asmstr, list<dag> pattern>:
+      Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_Pseudo>
+{
   let isCodeGenOnly = 1;
   let isPseudo = 1;
 }
 
 
-class PseudoSE<dag outs, dag ins, list<dag> pattern>:
-  Cpu0Pseudo<outs, ins, "", pattern> {
+class Cpu0Instr_PseudoSE<dag outs, dag ins, list<dag> pattern>:
+  Cpu0Instr_Pseudo<outs, ins, "", pattern> {
 }
 
 
@@ -72,13 +56,13 @@ class FA<bits<8> op, dag outs, dag ins, string asmstr,
          list<dag> pattern>:
       Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_A>
 {
+  bits<8>  opcode;
   bits<4>  ra;
   bits<4>  rb;
   bits<4>  rc;
   bits<12> shamt;
 
-  let Opcode = op;
-
+  let Inst{31-24} = opcode;
   let Inst{23-20} = ra;
   let Inst{19-16} = rb;
   let Inst{15-12} = rc;
@@ -89,12 +73,12 @@ class FA<bits<8> op, dag outs, dag ins, string asmstr,
 class FL<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>: 
   Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_B>
 {
+  bits<8> opcode;
   bits<4>  ra;
   bits<4>  rb;
   bits<16> imm16;
 
-  let Opcode = op;
-
+  let Inst{31-24} = opcode;
   let Inst{23-20} = ra;
   let Inst{19-16} = rb;
   let Inst{15-0}  = imm16;

@@ -60,26 +60,12 @@ namespace Cpu0II {
   }; // enum TOF {
 
   enum {
-    //===------------------------------------------------------------------===//
-    // Instruction encodings.  These are the standard/most common forms for
-    // Cpu0 instructions.
-    //
-
-    // Pseudo - This represents an instruction that is a pseudo instruction
-    // or one that has not been implemented yet.  It is illegal to code generate
-    // it, but tolerated for intermediate implementation stages.
-    Pseudo   = 0,
-
-    /// FrmR - This form is for instructions of the format R.
-    FrmR  = 1,
-    /// FrmI - This form is for instructions of the format I.
-    FrmI  = 2,
-    /// FrmJ - This form is for instructions of the format J.
-    FrmJ  = 3,
-    /// FrmOther - This form is for instructions that have no specific format.
-    FrmOther = 4,
-
-    FormMask = 15
+		// from Cpu0InstrFormats.td
+		//	identifies the type of Instruction Encoding Format
+		IEF_Pseudo = 0,
+		IEF_A = 1,
+		IEF_B = 2,
+		IEF_Mask = 15
   };
 }
 

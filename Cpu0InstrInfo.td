@@ -6,27 +6,23 @@
 // License. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-//
-// This file contains the Cpu0 implementation of the TargetInstrInfo class.
-//
-//===----------------------------------------------------------------------===//
 
-//===----------------------------------------------------------------------===//
-// Cpu0 profiles and nodes
-//===----------------------------------------------------------------------===//
 
+
+// SDNode related information
 def SDT_Cpu0Ret          : SDTypeProfile<0, 1, [SDTCisInt<0>]>;
 def SDT_Cpu0JmpLink      : SDTypeProfile<0, 1, [SDTCisVT<0, iPTR>]>;
+
 
 def SDT_Cpu0CallSeqStart : SDCallSeqStart<[SDTCisVT<0, i32>]>;
 def SDT_Cpu0CallSeqEnd   : SDCallSeqEnd<[SDTCisVT<0, i32>, SDTCisVT<1, i32>]>;
 
-// Call
+
 def Cpu0JmpLink : SDNode<"Cpu0ISD::JmpLink",SDT_Cpu0JmpLink,
                          [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
                           SDNPVariadic]>;
 
-// Tail call
+
 def Cpu0TailCall : SDNode<"Cpu0ISD::TailCall", SDT_Cpu0JmpLink,
                           [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
 
@@ -37,9 +33,10 @@ def Cpu0Hi    : SDNode<"Cpu0ISD::Hi", SDTIntUnaryOp>;
 def Cpu0Lo    : SDNode<"Cpu0ISD::Lo", SDTIntUnaryOp>;
 def Cpu0GPRel : SDNode<"Cpu0ISD::GPRel", SDTIntUnaryOp>;
 
-// Return
+
 def Cpu0Ret : SDNode<"Cpu0ISD::Ret", SDTNone,
                      [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
+
 
 // These are target-independent nodes, but have target-specific formats.
 def callseq_start : SDNode<"ISD::CALLSEQ_START", SDT_Cpu0CallSeqStart,
@@ -47,63 +44,12 @@ def callseq_start : SDNode<"ISD::CALLSEQ_START", SDT_Cpu0CallSeqStart,
 def callseq_end   : SDNode<"ISD::CALLSEQ_END", SDT_Cpu0CallSeqEnd,
                            [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>;
 
+
 def Cpu0Wrapper    : SDNode<"Cpu0ISD::Wrapper", SDTIntBinOp>;
 
-//===----------------------------------------------------------------------===//
-// Cpu0 Instruction Predicate Definitions.
-//===----------------------------------------------------------------------===//
-
-def Ch3_1       :     Predicate<"Subtarget->hasChapter3_1()">,
-                      AssemblerPredicate<"FeatureChapter3_1">;
-def Ch3_2       :     Predicate<"Subtarget->hasChapter3_2()">,
-                      AssemblerPredicate<"FeatureChapter3_2">;
-def Ch3_3       :     Predicate<"Subtarget->hasChapter3_3()">,
-                      AssemblerPredicate<"FeatureChapter3_3">;
-def Ch3_4       :     Predicate<"Subtarget->hasChapter3_4()">,
-                      AssemblerPredicate<"FeatureChapter3_4">;
-def Ch3_5       :     Predicate<"Subtarget->hasChapter3_5()">,
-                      AssemblerPredicate<"FeatureChapter3_5">;
-def Ch4_1       :     Predicate<"Subtarget->hasChapter4_1()">,
-                      AssemblerPredicate<"FeatureChapter4_1">;
-def Ch4_2       :     Predicate<"Subtarget->hasChapter4_2()">,
-                      AssemblerPredicate<"FeatureChapter4_2">;
-def Ch5_1       :     Predicate<"Subtarget->hasChapter5_1()">,
-                      AssemblerPredicate<"FeatureChapter5_1">;
-def Ch6_1       :     Predicate<"Subtarget->hasChapter6_1()">,
-                      AssemblerPredicate<"FeatureChapter6_1">;
-def Ch7_1       :     Predicate<"Subtarget->hasChapter7_1()">,
-                      AssemblerPredicate<"FeatureChapter7_1">;
-def Ch8_1       :     Predicate<"Subtarget->hasChapter8_1()">,
-                      AssemblerPredicate<"FeatureChapter8_1">;
-def Ch8_2       :     Predicate<"Subtarget->hasChapter8_2()">,
-                      AssemblerPredicate<"FeatureChapter8_2">;
-def Ch9_1       :     Predicate<"Subtarget->hasChapter9_1()">,
-                      AssemblerPredicate<"FeatureChapter9_1">;
-def Ch9_2       :     Predicate<"Subtarget->hasChapter9_2()">,
-                      AssemblerPredicate<"FeatureChapter9_2">;
-def Ch9_3       :     Predicate<"Subtarget->hasChapter9_3()">,
-                      AssemblerPredicate<"FeatureChapter9_3">;
-def Ch10_1      :     Predicate<"Subtarget->hasChapter10_1()">,
-                      AssemblerPredicate<"FeatureChapter10_1">;
-def Ch11_1      :     Predicate<"Subtarget->hasChapter11_1()">,
-                      AssemblerPredicate<"FeatureChapter11_1">;
-def Ch11_2      :     Predicate<"Subtarget->hasChapter11_2()">,
-                      AssemblerPredicate<"FeatureChapter11_2">;
-def Ch12_1      :     Predicate<"Subtarget->hasChapter12_1()">,
-                      AssemblerPredicate<"FeatureChapter12_1">;
-def Ch_all      :     Predicate<"Subtarget->hasChapterAll()">,
-                      AssemblerPredicate<"FeatureChapterAll">;
-
-def EnableOverflow  : Predicate<"Subtarget->enableOverflow()">;
-def DisableOverflow : Predicate<"Subtarget->disableOverflow()">;
-
-def HasCmp      :     Predicate<"Subtarget->hasCmp()">;
-def HasSlt      :     Predicate<"Subtarget->hasSlt()">;
 
 def RelocPIC    :     Predicate<"TM.getRelocationModel() == Reloc::PIC_">;
 
-class Cpu0InstAlias<string Asm, dag Result, bit Emit = 0b1> :
-  InstAlias<Asm, Result, Emit>;
 
 class IsTailCall {
   bit isCall = 1;
@@ -114,15 +60,11 @@ class IsTailCall {
   bit isCodeGenOnly = 1;
 }
 
-//===----------------------------------------------------------------------===//
-// Instruction format superclass
-//===----------------------------------------------------------------------===//
-
+// ****************************************************************************
 include "Cpu0InstrFormats.td"
 
-//===----------------------------------------------------------------------===//
+// ****************************************************************************
 // Cpu0 Operand, Complex Patterns and Transformations Definitions.
-//===----------------------------------------------------------------------===//
 // Instruction operand types
 
 // BEQ, BNE
@@ -203,20 +145,18 @@ def immZExt5 : ImmLeaf<i32, [{return Imm == (Imm & 0x1f);}]>;
 
 // Cpu0 Address Mode! SDNode frameindex could possibily be a match
 // since load and store instructions from stack used it.
-def addr : 
+def addr :
   ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
 
-//===----------------------------------------------------------------------===//
 // Pattern fragment for load/store
-//===----------------------------------------------------------------------===//
 
-class AlignedLoad<PatFrag Node> :
+class AlignedLoad<PatFrag Node>:
   PatFrag<(ops node:$ptr), (Node node:$ptr), [{
   LoadSDNode *LD = cast<LoadSDNode>(N);
   return LD->getMemoryVT().getSizeInBits()/8 <= LD->getAlignment();
 }]>;
 
-class AlignedStore<PatFrag Node> :
+class AlignedStore<PatFrag Node>:
   PatFrag<(ops node:$val, node:$ptr), (Node node:$val, node:$ptr), [{
   StoreSDNode *SD = cast<StoreSDNode>(N);
   return SD->getMemoryVT().getSizeInBits()/8 <= SD->getAlignment();
@@ -226,13 +166,11 @@ class AlignedStore<PatFrag Node> :
 def load_a          : AlignedLoad<load>;
 def store_a         : AlignedStore<store>;
 
-//===----------------------------------------------------------------------===//
-// Instructions specific format
-//===----------------------------------------------------------------------===//
 
-let Predicates = [Ch3_5] in {
-// Arithmetic and logical instructions with 3 register operands.
-class ArithLogicR<bits<8> op, string instr_asm, SDNode OpNode,
+//****************************************************************************
+// Instructions specific format
+// op $ra, $rb, $rc,  where $ra = (op $rb $rc)
+class ArithLogicInstr_RRR<bits<8> op, string instr_asm, SDNode OpNode,
                   RegisterClass RC, bit isComm = 0>:
   FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
      !strconcat(instr_asm, "\t$ra, $rb, $rc"),
@@ -241,132 +179,69 @@ class ArithLogicR<bits<8> op, string instr_asm, SDNode OpNode,
   let isCommutable = isComm;	// e.g. add rb rc =  add rc rb
   let isReMaterializable = 1;
 }
-}
 
-// Arithmetic and logical instructions with 2 register operands.
-class ArithLogicI<bits<8> op, string instr_asm, SDNode OpNode,
-                  Operand Od, PatLeaf imm_type, RegisterClass RC> :
+// op $ra, $rb, $imm
+class ArithLogic_RRI<bits<8> op, string instr_asm, SDNode OpNode,
+                  Operand Od, PatLeaf imm_type, RegisterClass RC>:
   FL<op, (outs GPROut:$ra), (ins RC:$rb, Od:$imm16),
      !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
      [(set GPROut:$ra, (OpNode RC:$rb, imm_type:$imm16))]> {
   let isReMaterializable = 1;
 }
 
-let Predicates = [Ch3_5] in {
-// Shifts
-class shift_rotate_imm<bits<8> op, bits<4> isRotate, string instr_asm,
-                       SDNode OpNode, PatFrag PF, Operand ImmOpnd,
-                       RegisterClass RC>:
-  FA<op, (outs GPROut:$ra), (ins RC:$rb, ImmOpnd:$shamt),
-     !strconcat(instr_asm, "\t$ra, $rb, $shamt"),
-     [(set GPROut:$ra, (OpNode RC:$rb, PF:$shamt))]> {
-  let rc = 0;
-}
-}
-
-let Predicates = [Ch4_1] in {
-class shift_rotate_reg<bits<8> op, bits<4> isRotate, string instr_asm,
-                       SDNode OpNode, RegisterClass RC>:
-  FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
-     !strconcat(instr_asm, "\t$ra, $rb, $rc"),
-     [(set GPROut:$ra, (OpNode RC:$rb, RC:$rc))]> {
-  let shamt = 0;
-}
-}
-
-let Predicates = [Ch3_5] in {
-// Load Upper Imediate
+// load upper immediate
 class LoadUpper<bits<8> op, string instr_asm, RegisterClass RC, Operand Imm>:
   FL<op, (outs RC:$ra), (ins Imm:$imm16),
-     !strconcat(instr_asm, "\t$ra, $imm16"), []> {
+     !strconcat(instr_asm, "\t$ra, $imm16"), []>
+{
   let rb = 0;
   let isReMaterializable = 1;
 }
-}
 
-class FMem<bits<8> op, dag outs, dag ins, string asmstr, list<dag> pattern>:
-  FL<op, outs, ins, asmstr, pattern> {
+class FMem<bits<8> op, dag outs, dag ins, string asmstr,
+    list<dag> pattern>:
+  FL<op, outs, ins, asmstr, pattern>
+{
   bits<20> addr;
   let Inst{19-16} = addr{19-16};
   let Inst{15-0}  = addr{15-0};
   let DecoderMethod = "DecodeMem";
 }
 
-// Memory Load/Store
 let canFoldAsLoad = 1 in
-class LoadM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
-            Operand MemOpnd, bit Pseudo>:
+class LoadM<bits<8> op, string instr_asm, PatFrag OpNode,
+    RegisterClass RC, Operand MemOpnd>:
   FMem<op, (outs RC:$ra), (ins MemOpnd:$addr),
      !strconcat(instr_asm, "\t$ra, $addr"),
-     [(set RC:$ra, (OpNode addr:$addr))]> {
-  let isPseudo = Pseudo;
-}
+     [(set RC:$ra, (OpNode addr:$addr))]>;
 
-class StoreM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
-             Operand MemOpnd, bit Pseudo>:
+class StoreM<bits<8> op, string instr_asm, PatFrag OpNode,
+    RegisterClass RC, Operand MemOpnd>:
   FMem<op, (outs), (ins RC:$ra, MemOpnd:$addr),
      !strconcat(instr_asm, "\t$ra, $addr"),
-     [(OpNode RC:$ra, addr:$addr)]> {
-  let isPseudo = Pseudo;
-}
+     [(OpNode RC:$ra, addr:$addr)]>;
 
-//@ 32-bit load.
-multiclass LoadM32<bits<8> op, string instr_asm, PatFrag OpNode,
-                   bit Pseudo = 0> {
-  def #NAME# : LoadM<op, instr_asm, OpNode, GPROut, mem, Pseudo>;
-}
-
-// 32-bit store.
-multiclass StoreM32<bits<8> op, string instr_asm, PatFrag OpNode,
-                    bit Pseudo = 0> {
-  def #NAME# : StoreM<op, instr_asm, OpNode, CPURegs, mem, Pseudo>;
-}
-
-let Predicates = [Ch8_1] in {
-// Conditional Branch, e.g. BEQ $r1, $r2, brtarget16
-class CBranch16<bits<8> op, string instr_asm, PatFrag cond_op, RegisterClass RC>:
+class CBranch16<bits<8> op, string instr_asm, PatFrag cond_op,
+    RegisterClass RC>:
   FL<op, (outs), (ins RC:$ra, RC:$rb, brtarget16:$imm16),
              !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
-             [(brcond (i32 (cond_op RC:$ra, RC:$rb)), bb:$imm16)]>, 
-             Requires<[HasSlt]> {
+             [(brcond (i32 (cond_op RC:$ra, RC:$rb)), bb:$imm16)]> {
   let isBranch = 1;
   let isTerminator = 1;
-  let hasDelaySlot = 1;
   let Defs = [AT];
 }
-}
 
-// SetCC
-let Predicates = [Ch4_2] in {
-class SetCC_R<bits<8> op, string instr_asm, PatFrag cond_op,
-              RegisterClass RC>:
-  FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
-     !strconcat(instr_asm, "\t$ra, $rb, $rc"),
-     [(set GPROut:$ra, (cond_op RC:$rb, RC:$rc))]>,
-     Requires<[HasSlt]> {
-  let shamt = 0;
-}
-
-class SetCC_I<bits<8> op, string instr_asm, PatFrag cond_op, Operand Od,
-              PatLeaf imm_type, RegisterClass RC>:
-  FL<op, (outs GPROut:$ra), (ins RC:$rb, Od:$imm16),
-     !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
-     [(set GPROut:$ra, (cond_op RC:$rb, imm_type:$imm16))]>, Requires<[HasSlt]> {
-}
-}
-
-//@JumpFR {
-let isBranch=1, isTerminator=1, isBarrier=1, imm16=0, hasDelaySlot = 0,
-    isIndirectBranch = 1 in
 class JumpFR<bits<8> op, string instr_asm, RegisterClass RC>:
   FL<op, (outs), (ins RC:$ra),
      !strconcat(instr_asm, "\t$ra"), [(brind RC:$ra)]> {
+  let isBranch = 1;
+  let isBarrier = 1;
+  let isTerminator = 1;
+  let isIndirectBranch = 1;
   let rb = 0;
   let imm16 = 0;
 }
-//@JumpFR }
 
-// Return instruction
 class RetBase<RegisterClass RC>: JumpFR<0x3c, "ret", RC> {
   let isReturn = 1;
   let isCodeGenOnly = 1;
@@ -374,51 +249,42 @@ class RetBase<RegisterClass RC>: JumpFR<0x3c, "ret", RC> {
   let hasExtraSrcRegAllocReq = 1;
 }
 
-let Predicates = [Ch9_1] in {
-// Jump and Link (Call)
-let isCall=1, hasDelaySlot=1 in {
-  class JumpLinkReg<bits<8> op, string instr_asm,
-                    RegisterClass RC>:
-    FA<op, (outs), (ins RC:$rb, variable_ops),
-       !strconcat(instr_asm, "\t$rb"), [(Cpu0JmpLink RC:$rb)]> {
-    let rc = 0;
-    let ra = 14;
-    let shamt = 0;
-  }
+class JumpLinkReg<bits<8> op, string instr_asm,
+                  RegisterClass RC>:
+  FA<op, (outs), (ins RC:$rb, variable_ops),
+     !strconcat(instr_asm, "\t$rb"), [(Cpu0JmpLink RC:$rb)]> {
+  let rc = 0;
+  let ra = 14;
+  let shamt = 0;
+  let isCall = 1;
 }
 
-//@class TailCall
-let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1, hasDelaySlot = 1,
-    hasExtraSrcRegAllocReq = 1, Defs = [AT] in {
-  class TailCall<Instruction JumpInst> :
-    PseudoSE<(outs), (ins calltarget:$target), []>,
+let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
+    hasDelaySlot = 1, hasExtraSrcRegAllocReq = 1, Defs = [AT] in {
+  class TailCall<Instruction JumpInst>:
+    Cpu0Instr_PseudoSE<(outs), (ins calltarget:$target), []>,
     PseudoInstExpansion<(JumpInst jmptarget:$target)>;
 
   class TailCallReg<RegisterClass RO, Instruction JRInst,
-                    RegisterClass ResRO = RO> :
-    PseudoSE<(outs), (ins RO:$rs), [(Cpu0TailCall RO:$rs)]>,
+                    RegisterClass ResRO = RO>:
+    Cpu0Instr_PseudoSE<(outs), (ins RO:$rs), [(Cpu0TailCall RO:$rs)]>,
     PseudoInstExpansion<(JRInst ResRO:$rs)>;
 }
-} // let Predicates = [Ch9_1]
 
-let Predicates = [Ch7_1] in {
-//@EffectiveAddress
-class EffectiveAddress<string instr_asm, RegisterClass RC, Operand Mem> :
+class EffectiveAddress<string instr_asm, RegisterClass RC, Operand Mem>:
   FMem<0x09, (outs RC:$ra), (ins Mem:$addr),
      instr_asm, [(set RC:$ra, addr:$addr)]>;
-}
 
 //===----------------------------------------------------------------------===//
 // Pseudo instructions
 //===----------------------------------------------------------------------===//
 
-let Predicates = [Ch9_2] in {
 // As stack alignment is always done with addiu, we need a 16-bit immediate
 let Defs = [SP], Uses = [SP] in {
-def ADJCALLSTACKDOWN : Cpu0Pseudo<(outs), (ins uimm16:$amt),
+def ADJCALLSTACKDOWN : Cpu0Instr_Pseudo<(outs), (ins uimm16:$amt),
                                   "!ADJCALLSTACKDOWN $amt",
                                   [(callseq_start timm:$amt)]>;
-def ADJCALLSTACKUP   : Cpu0Pseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
+def ADJCALLSTACKUP   : Cpu0Instr_Pseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
                                   "!ADJCALLSTACKUP $amt1",
                                   [(callseq_end timm:$amt1, timm:$amt2)]>;
 }
@@ -429,90 +295,45 @@ def ADJCALLSTACKUP   : Cpu0Pseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
 // are used, we have the same behavior, but get also a bunch of warnings
 // from the assembler.
 let hasSideEffects = 0 in
-def CPRESTORE : Cpu0Pseudo<(outs), (ins i32imm:$loc, CPURegs:$gp),
+def CPRESTORE : Cpu0Instr_Pseudo<(outs), (ins i32imm:$loc, CPURegs:$gp),
                            ".cprestore\t$loc", []>;
-} // let Predicates = [Ch9_2]
-  
-//===----------------------------------------------------------------------===//
+
+// ****************************************************************************
 // Instruction definition
-//===----------------------------------------------------------------------===//
 
-//===----------------------------------------------------------------------===//
 // Cpu0 Instructions
-//===----------------------------------------------------------------------===//
+def LD     : LoadM<0x01,  "loa",  load_a, GPROut, mem>;
+def ST     : StoreM<0x02, "sto",  store_a, CPURegs, mem>;
+def LB     : LoadM<0x04, "lb", sextloadi8, GPROut, mem>;
+def SB     : StoreM<0x05, "sb", truncstorei8, CPURegs, mem>;
 
-/// Load and Store Instructions
-///  aligned
-defm LD     : LoadM32<0x01,  "loa",  load_a>;
-defm ST     : StoreM32<0x02, "sto",  store_a>;
-let Predicates = [Ch7_1] in {
-defm LB     : LoadM32<0x04, "lb", sextloadi8>;
-defm SB     : StoreM32<0x05, "sb", truncstorei8>;
-}
+def ADDiu   : ArithLogic_RRI<0x09, "addi", add, simm16, immSExt16, CPURegs>;
+def ORi     : ArithLogic_RRI<0x0d, "ori", or, uimm16, immZExt16, CPURegs>;
 
-/// Arithmetic Instructions (ALU Immediate)
-// IR "add" defined in include/llvm/Target/TargetSelectionDAG.td, line 315 (def add).
-def ADDiu   : ArithLogicI<0x09, "addi", add, simm16, immSExt16, CPURegs>;
-let Predicates = [Ch3_5] in {
-def ORi     : ArithLogicI<0x0d, "ori", or, uimm16, immZExt16, CPURegs>;
-}
-let Predicates = [Ch3_5] in {
+def ADDu    : ArithLogicInstr_RRR<0x11, "add", add, CPURegs, 1>;
+def SUBu    : ArithLogicInstr_RRR<0x12, "sub", sub, CPURegs>;
+def MULu    : ArithLogicInstr_RRR<0x17, "mul", mul, CPURegs>;
+def AND     : ArithLogicInstr_RRR<0x18, "and", and, CPURegs, 1>;
+def OR      : ArithLogicInstr_RRR<0x19, "or", or, CPURegs, 1>;
+def XOR     : ArithLogicInstr_RRR<0x1a, "xor", xor, CPURegs, 1>;
+def SHLV    : ArithLogicInstr_RRR<0x21, "shl", shl, CPURegs>;
+def SHRV    : ArithLogicInstr_RRR<0x22, "shr", srl, CPURegs>;
+
 def LUi     : LoadUpper<0x0f, "lui", GPROut, uimm16>;
-}
 
-/// Arithmetic Instructions (3-Operand, R-Type)
-let Predicates = [Ch3_5] in {
-let Predicates = [DisableOverflow] in {
-def ADDu    : ArithLogicR<0x11, "add", add, CPURegs, 1>;
-}
-}
-let Predicates = [Ch4_1] in {
-let Predicates = [DisableOverflow] in {
-def SUBu    : ArithLogicR<0x12, "sub", sub, CPURegs>;
-def MULu    : ArithLogicR<0x17, "mul", mul, CPURegs>;
-}
-}
-
-let Predicates = [Ch4_2] in {
-def AND     : ArithLogicR<0x18, "and", and, CPURegs, 1>;
-def OR      : ArithLogicR<0x19, "or", or, CPURegs, 1>;
-def XOR     : ArithLogicR<0x1a, "xor", xor, CPURegs, 1>;
-}
-
-/// Shift Instructions
-let Predicates = [Ch4_1] in {
-def SHLV    : shift_rotate_reg<0x21, 0x00, "shl", shl, CPURegs>;
-def SHRV    : shift_rotate_reg<0x22, 0x00, "shr", srl, CPURegs>;
-}
-
-/// Jump and Branch Instructions
-let Predicates = [Ch8_1] in {
-let Predicates = [HasSlt] in {
 def BEQ     : CBranch16<0x37, "beq", seteq, GPROut>;
 def BNE     : CBranch16<0x39, "bne", setne, GPROut>; // TODO: delete
-def BLT     : CBranch16<0x38, "blt", setlt, GPROut>; // don't have bne
-}
-}
+def BLT     : CBranch16<0x38, "blt", setult, GPROut>; // don't have bne
 
 def JR      : JumpFR<0x3c, "jr", GPROut>;
+def JALR    : JumpLinkReg<0x39, "jalr", GPROut>;
 
-let Predicates = [Ch3_4] in {
 let isReturn=1, isTerminator=1, hasDelaySlot=0, isBarrier=1, hasCtrlDep=1 in
-  def RetLR : Cpu0Pseudo<(outs), (ins), "", [(Cpu0Ret)]>;
-}
+  def RetLR : Cpu0Instr_Pseudo<(outs), (ins), "", [(Cpu0Ret)]>;
 
 def RET     : RetBase<GPROut>;
 
-let Predicates = [Ch9_1] in {
-def JALR    : JumpLinkReg<0x39, "jalr", GPROut>;
-}
-
-// def NOP: FA<0, (outs), (ins), "nop", []>;
-
-let Predicates = [Ch9_1] in {
-// def TAILCALL : TailCall<JMP>;
 def TAILCALL_R : TailCallReg<GPROut, JR>;
-}
 
 // FrameIndexes are legalized when they are operands from load/store
 // instructions. The same not happens for stack address copies, so an
@@ -521,25 +342,23 @@ def TAILCALL_R : TailCallReg<GPROut, JR>;
 def LEA_ADDiu : EffectiveAddress<"addiu\t$ra, $addr", CPURegs, mem_ea> {
   let isCodeGenOnly = 1;
 }
-//@def LEA_ADDiu }
 
-let Predicates = [Ch3_5] in {
-//===----------------------------------------------------------------------===//
-// Instruction aliases
-//===----------------------------------------------------------------------===//
+
+// ****************************************************************************
+// instruction aliases
+class Cpu0InstAlias<string Asm, dag Result, bit Emit = 0b1>:
+  InstAlias<Asm, Result, Emit>;
 def : Cpu0InstAlias<"move $dst, $src",
                     (ADDu GPROut:$dst, GPROut:$src,ZR), 1>;
-}
 
-//===----------------------------------------------------------------------===//
+
+// ****************************************************************************
 //  Arbitrary patterns that map to one or more instructions
-//===----------------------------------------------------------------------===//
 
 // Small immediates
 def : Pat<(i32 immSExt16:$in),
           (ADDiu ZR, imm:$in)>;
 
-let Predicates = [Ch3_5] in {
 def : Pat<(i32 immZExt16:$in),
           (ORi ZR, imm:$in)>;
 def : Pat<(i32 immLow16Zero:$in),
@@ -548,129 +367,83 @@ def : Pat<(i32 immLow16Zero:$in),
 // Arbitrary immediates
 def : Pat<(i32 imm:$imm),
           (ORi (LUi (HI16 imm:$imm)), (LO16 imm:$imm))>;
-} // let Predicates = [Ch3_4]
 
-let Predicates = [Ch9_1] in {
 def : Pat<(Cpu0JmpLink (i32 tglobaladdr:$dst)),
           (JALR tglobaladdr:$dst)>;
 def : Pat<(Cpu0JmpLink (i32 texternalsym:$dst)),
           (JALR texternalsym:$dst)>;
 
-//@Pat<Cpu0TailCall>
 def : Pat<(Cpu0TailCall (iPTR tglobaladdr:$dst)),
               (TAILCALL_R tglobaladdr:$dst)>;
 def : Pat<(Cpu0TailCall (iPTR texternalsym:$dst)),
               (TAILCALL_R texternalsym:$dst)>;
-}
 
 // hi/lo relocs
-let Predicates = [Ch6_1] in {
 def : Pat<(Cpu0Hi tglobaladdr:$in), (LUi tglobaladdr:$in)>;
-}
-let Predicates = [Ch8_1] in {
 def : Pat<(Cpu0Hi tblockaddress:$in), (LUi tblockaddress:$in)>;
 def : Pat<(Cpu0Hi tjumptable:$in), (LUi tjumptable:$in)>;
-}
 
-let Predicates = [Ch6_1] in {
 def : Pat<(Cpu0Lo tglobaladdr:$in), (ORi ZR, tglobaladdr:$in)>;
-}
-let Predicates = [Ch8_1] in {
 def : Pat<(Cpu0Lo tblockaddress:$in), (ORi ZR, tblockaddress:$in)>;
 def : Pat<(Cpu0Lo tjumptable:$in), (ORi ZR, tjumptable:$in)>;
-}
 
-let Predicates = [Ch6_1] in {
 def : Pat<(add CPURegs:$hi, (Cpu0Lo tglobaladdr:$lo)),
           (ORi CPURegs:$hi, tglobaladdr:$lo)>;
-}
-let Predicates = [Ch8_1] in {
 def : Pat<(add CPURegs:$hi, (Cpu0Lo tblockaddress:$lo)),
               (ORi CPURegs:$hi, tblockaddress:$lo)>;
 def : Pat<(add CPURegs:$hi, (Cpu0Lo tjumptable:$lo)),
               (ORi CPURegs:$hi, tjumptable:$lo)>;
-}
+
 // gp_rel relocs
-let Predicates = [Ch6_1] in {
 def : Pat<(add CPURegs:$gp, (Cpu0GPRel tglobaladdr:$in)),
           (ORi CPURegs:$gp, tglobaladdr:$in)>;
-}
 
-//@ wrapper_pic
-let Predicates = [Ch6_1] in {
 class WrapperPat<SDNode node, Instruction ORiOp, RegisterClass RC>:
       Pat<(Cpu0Wrapper RC:$gp, node:$in),
               (ORiOp RC:$gp, node:$in)>;
 
 def : WrapperPat<tglobaladdr, ORi, GPROut>;
-}
-let Predicates = [Ch8_1] in {
 def : WrapperPat<tjumptable, ORi, GPROut>;
-}
 
-let Predicates = [Ch4_2] in {
 def : Pat<(not CPURegs:$in),
-// 1: in == 0; 0: in != 0
           (XOR CPURegs:$in, (ADDiu ZR, -1))>;
-}
 
-// implement lbu on top of lb
-let Predicates = [Ch7_1] in {
 def : Pat<(zextloadi8 addr:$addr),
           (AND (LB addr:$addr), (ADDiu ZR, 0xFF))>;
-}
 
-// brcond patterns
-let Predicates = [Ch8_1] in {
-
-
-// brcond for slt instruction
-multiclass BrcondPatsSlt<RegisterClass RC, Instruction BEQOp, Instruction BLTop,
-                      Register ZRReg> {
-
-// br imm
+// br imm     -> beq ZR ZR imm
 def : Pat<(br bb:$dst),
-              (BEQOp ZRReg, ZRReg, bb:$dst)>;
+              (BEQ ZR, ZR, bb:$dst)>;
 
 // beq $r1 $zr imm
-def : Pat<(brcond (i32 (seteq RC:$lhs, 0)), bb:$dst),
-              (BEQOp RC:$lhs, ZRReg, bb:$dst)>;
+def : Pat<(brcond (i32 (seteq CPURegs:$lhs, 0)), bb:$dst),
+              (BEQ CPURegs:$lhs, ZR, bb:$dst)>;
 
-// bne $r1 $zr imm
-def : Pat<(brcond (i32 (setne RC:$lhs, 0)), bb:$dst),
-              (BNE RC:$lhs, ZRReg, bb:$dst)>;
+// bne $r1 0 imm
+def : Pat<(brcond (i32 (setne CPURegs:$lhs, 0)), bb:$dst),
+              (BNE CPURegs:$lhs, ZR, bb:$dst)>;
 
-// beq $r1 $r2 imm  [cmp=cmpunsigned]
-def : Pat<(brcond (i32 (setueq RC:$lhs, RC:$rhs)), bb:$dst),
-              (BEQOp RC:$lhs, RC:$rhs, bb:$dst)>;
+// beq $r1 $r2 imm
+def : Pat<(brcond (i32 (setueq CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
+              (BEQ CPURegs:$lhs, CPURegs:$rhs, bb:$dst)>;
 
-// beq $r1 $r2 imm  [cmp=cmpunsigned]
-def : Pat<(brcond (i32 (setune RC:$lhs, RC:$rhs)), bb:$dst),
-              (BNE RC:$lhs, RC:$rhs, bb:$dst)>;
+// beq $r1 $r2 imm
+def : Pat<(brcond (i32 (setune CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
+              (BNE CPURegs:$lhs, CPURegs:$rhs, bb:$dst)>;
 
 // blt $r1 $r2 imm
-def : Pat<(brcond (i32 (setult RC:$lhs, RC:$rhs)), bb:$dst),
+def : Pat<(brcond (i32 (setult CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
               (BLT $lhs, $rhs, $dst)>;
 
 // ble $r1 $r2 imm        lhs <= rhs    -> lhs < rhs + 1
-def : Pat<(brcond (i32 (setule RC:$lhs, RC:$rhs)), bb:$dst),
+def : Pat<(brcond (i32 (setule CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
               (BLT $lhs, (ADDiu $rhs, 1), $dst)>;
 
 // bgt $r1 $r2 imm == blt $r2 $r1 imm
-def : Pat<(brcond (i32 (setugt RC:$lhs, RC:$rhs)), bb:$dst),
+def : Pat<(brcond (i32 (setugt CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
               (BLT $rhs, $lhs, $dst)>;
 
 // bge $r1 $r2 imm == blt $r2 $r1+1 imm
-def : Pat<(brcond (i32 (setuge RC:$lhs, RC:$rhs)), bb:$dst),
+def : Pat<(brcond (i32 (setuge CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
               (BLT $rhs, (ADDiu $lhs, 1), $dst)>;
-
-// TODO: ble $r1 $r2 imm  -> blt $r1 (addiu $r2 1) imm
-}
-
-let Predicates = [HasSlt] in {
-defm : BrcondPatsSlt<CPURegs, BEQ, BLT, ZR>;
-}
-
-} // let Predicates = [Ch8_1]
-
 
