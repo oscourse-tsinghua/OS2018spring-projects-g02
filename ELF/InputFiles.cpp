@@ -580,6 +580,9 @@ static uint8_t getMachineKind(MemoryBufferRef MB) {
     return EM_386;
   case Triple::x86_64:
     return EM_X86_64;
+  case Triple::cpu0:
+  case Triple::cpu0el:
+    return EM_CPU0;
   default:
     fatal(MB.getBufferIdentifier() +
           ": could not infer e_machine from bitcode target triple " +

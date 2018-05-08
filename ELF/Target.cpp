@@ -208,6 +208,14 @@ public:
 };
 } // anonymous namespace
 
+template <class ELFT> class Cpu0TargetInfo final : public TargetInfo {
+public:
+  Cpu0TargetInfo();
+  RelExpr getRelExpr(uint32_t Type, const SymbolBody &S) const override;
+  void writeGotPlt(uint8_t *Buf, const SymbolBody &S) const override;
+  void relocateOne(uint8_t *Loc, uint32_t Type, uint64_t Val) const override;
+};
+
 TargetInfo *createTarget() {
   switch (Config->EMachine) {
   case EM_386:
@@ -239,6 +247,15 @@ TargetInfo *createTarget() {
     if (Config->EKind == ELF32LEKind)
       return new X86_64TargetInfo<ELF32LE>();
     return new X86_64TargetInfo<ELF64LE>();
+  case EM_CPU0:
+    switch (Config->EKind) {
+    case ELF32LEKind:
+      return new Cpu0TargetInfo<ELF32LE>();
+    case ELF32BEKind:
+      return new Cpu0TargetInfo<ELF32BE>();
+    default:
+      fatal("unsupported CPU0 target");
+    }
   }
   fatal("unknown target machine");
 }
@@ -2116,5 +2133,71 @@ template <class ELFT>
 bool MipsTargetInfo<ELFT>::usesOnlyLowPageBits(uint32_t Type) const {
   return Type == R_MIPS_LO16 || Type == R_MIPS_GOT_OFST;
 }
+
+template <class ELFT> Cpu0TargetInfo<ELFT>::Cpu0TargetInfo() {
+  GotPltHeaderEntriesNum = 2;
+  PageSize = 65536;
+  GotEntrySize = sizeof(typename ELFT::uint);
+  GotPltEntrySize = sizeof(typename ELFT::uint);
+  PltEntrySize = 16;
+  PltHeaderSize = 32;
+}
+
+template <class ELFT>
+RelExpr Cpu0TargetInfo<ELFT>::getRelExpr(uint32_t Type,
+                                         const SymbolBody &S) const {
+  switch (Type) {
+  default:
+    return R_ABS;
+  case R_CPU0_32:
+  case R_CPU0_HI16:
+  case R_CPU0_LO16:
+    return R_ABS;
+  }
+}
+
+template <class ELFT>
+void Cpu0TargetInfo<ELFT>::writeGotPlt(uint8_t *Buf, const SymbolBody &) const {
+  write32<ELFT::TargetEndianness>(Buf, Out<ELFT>::Plt->getVA());
+}
+
+template <endianness E, uint8_t BSIZE, uint8_t SHIFT>
+static void applyCpu0PcReloc(uint8_t *Loc, uint64_t V) {
+  uint32_t Mask = 0xffffffff >> (32 - BSIZE);
+  uint32_t Instr = read32<E>(Loc);
+  write32<E>(Loc, (Instr & ~Mask) | ((V >> SHIFT) & Mask));
+}
+
+template <endianness E>
+static void writeCpu0Hi16(uint8_t *Loc, uint64_t V) {
+  uint32_t Instr = read32<E>(Loc);
+  write32<E>(Loc, (Instr & 0xffff0000) | mipsHigh(V));
+}
+
+template <endianness E>
+static void writeCpu0Lo16(uint8_t *Loc, uint64_t V) {
+  uint32_t Instr = read32<E>(Loc);
+  write32<E>(Loc, (Instr & 0xffff0000) | (V & 0xffff));
+}
+
+template <class ELFT>
+void Cpu0TargetInfo<ELFT>::relocateOne(uint8_t *Loc, uint32_t Type,
+                                       uint64_t Val) const {
+  const endianness E = ELFT::TargetEndianness;
+  switch (Type) {
+  case R_CPU0_32:
+    write32<E>(Loc, Val);
+    break;
+  case R_CPU0_LO16:
+    writeCpu0Lo16<E>(Loc, Val);
+    break;
+  case R_CPU0_HI16:
+    writeCpu0Hi16<E>(Loc, Val);
+    break;
+  default:
+    fatal("unrecognized reloc " + Twine(Type));
+  }
+}
+
 }
 }
