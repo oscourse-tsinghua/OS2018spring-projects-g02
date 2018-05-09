@@ -51,7 +51,8 @@ def Cpu0Wrapper    : SDNode<"Cpu0ISD::Wrapper", SDTIntBinOp>;
 def RelocPIC    :     Predicate<"TM.getRelocationModel() == Reloc::PIC_">;
 
 
-class IsTailCall {
+class IsTailCall 
+{
   bit isCall = 1;
   bit isTerminator = 1;
   bit isReturn = 1;
@@ -65,45 +66,48 @@ include "Cpu0InstrFormats.td"
 
 // ****************************************************************************
 // Cpu0 Operand, Complex Patterns and Transformations Definitions.
-// Instruction operand types
 
-// BEQ, BNE
-def brtarget16    : Operand<OtherVT> {
+def brtarget16    : Operand<OtherVT> 
+{
   let EncoderMethod = "getBranch16TargetOpValue";
   let OperandType = "OPERAND_PCREL";
-  let DecoderMethod = "DecodeBranch16Target";
 }
 
-// JMP
-def jmptarget    : Operand<OtherVT> {
+def jmptarget    : Operand<OtherVT> 
+{
   let EncoderMethod = "getJumpTargetOpValue";
   let OperandType = "OPERAND_PCREL";
 }
 
-def calltarget  : Operand<iPTR> {
+def calltarget  : Operand<iPTR> 
+{
   let EncoderMethod = "getJumpTargetOpValue";
 }
 
 // Signed Operand
-def simm16      : Operand<i32> {
+def simm16      : Operand<i32> 
+{
   let DecoderMethod= "DecodeSimm16";
 }
 
 def shamt       : Operand<i32>;
 
 // Unsigned Operand
-def uimm16      : Operand<i32> {
+def uimm16      : Operand<i32> 
+{
   let PrintMethod = "printUnsignedImm";
 }
 
 // Address operand
-def mem : Operand<iPTR> {
+def mem : Operand<iPTR> 
+{
   let PrintMethod = "printMemOperand";
   let MIOperandInfo = (ops CPURegs, simm16);
   let EncoderMethod = "getMemEncoding";
 }
 
-def mem_ea : Operand<iPTR> {
+def mem_ea : Operand<iPTR> 
+{
   let PrintMethod = "printMemOperandEA";
   let MIOperandInfo = (ops CPURegs, simm16);
   let EncoderMethod = "getMemEncoding";
@@ -145,11 +149,11 @@ def immZExt5 : ImmLeaf<i32, [{return Imm == (Imm & 0x1f);}]>;
 
 // Cpu0 Address Mode! SDNode frameindex could possibily be a match
 // since load and store instructions from stack used it.
-def addr :
+def addr:
   ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
 
-// Pattern fragment for load/store
-
+// load and store of each type should be aligned to the size of that type
+// e.g. load/store word should be aligned to a 4 byte boundary
 class AlignedLoad<PatFrag Node>:
   PatFrag<(ops node:$ptr), (Node node:$ptr), [{
   LoadSDNode *LD = cast<LoadSDNode>(N);
@@ -163,34 +167,35 @@ class AlignedStore<PatFrag Node>:
 }]>;
 
 // Load/Store PatFrags.
-def load_a          : AlignedLoad<load>;
-def store_a         : AlignedStore<store>;
+def alignedload          : AlignedLoad<load>;
+def alignedstore         : AlignedStore<store>;
 
 
 //****************************************************************************
 // Instructions specific format
 // op $ra, $rb, $rc,  where $ra = (op $rb $rc)
-class ArithLogicInstr_RRR<bits<8> op, string instr_asm, SDNode OpNode,
-                  RegisterClass RC, bit isComm = 0>:
+class ArithLogicInstr_RRR<bits<6> op, string instr_asm, SDNode OpNode,
+    RegisterClass RC, bit isComm = 0>:
   FA<op, (outs GPROut:$ra), (ins RC:$rb, RC:$rc),
      !strconcat(instr_asm, "\t$ra, $rb, $rc"),
-     [(set GPROut:$ra, (OpNode RC:$rb, RC:$rc))]> {
-  let shamt = 0;
-  let isCommutable = isComm;	// e.g. add rb rc =  add rc rb
+     [(set GPROut:$ra, (OpNode RC:$rb, RC:$rc))]>
+{
+  let isCommutable = isComm;	// e.g. add rb rc = add rc rb
   let isReMaterializable = 1;
 }
 
 // op $ra, $rb, $imm
-class ArithLogic_RRI<bits<8> op, string instr_asm, SDNode OpNode,
-                  Operand Od, PatLeaf imm_type, RegisterClass RC>:
-  FL<op, (outs GPROut:$ra), (ins RC:$rb, Od:$imm16),
-     !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
-     [(set GPROut:$ra, (OpNode RC:$rb, imm_type:$imm16))]> {
+class ArithLogic_RRI<bits<6> op, string instr_asm, SDNode OpNode,
+  Operand Od, PatLeaf imm_type, RegisterClass RC>:
+FL<op, (outs GPROut:$ra), (ins RC:$rb, Od:$imm16),
+   !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
+   [(set GPROut:$ra, (OpNode RC:$rb, imm_type:$imm16))]>
+{
   let isReMaterializable = 1;
 }
 
 // load upper immediate
-class LoadUpper<bits<8> op, string instr_asm, RegisterClass RC, Operand Imm>:
+class LoadUpper<bits<6> op, string instr_asm, RegisterClass RC, Operand Imm>:
   FL<op, (outs RC:$ra), (ins Imm:$imm16),
      !strconcat(instr_asm, "\t$ra, $imm16"), []>
 {
@@ -198,8 +203,7 @@ class LoadUpper<bits<8> op, string instr_asm, RegisterClass RC, Operand Imm>:
   let isReMaterializable = 1;
 }
 
-class FMem<bits<8> op, dag outs, dag ins, string asmstr,
-    list<dag> pattern>:
+class FMem<bits<6> op, dag outs, dag ins, string asmstr, list<dag> pattern>:
   FL<op, outs, ins, asmstr, pattern>
 {
   bits<20> addr;
@@ -209,31 +213,33 @@ class FMem<bits<8> op, dag outs, dag ins, string asmstr,
 }
 
 let canFoldAsLoad = 1 in
-class LoadM<bits<8> op, string instr_asm, PatFrag OpNode,
+class LoadM<bits<6> op, string instr_asm, PatFrag OpNode,
     RegisterClass RC, Operand MemOpnd>:
   FMem<op, (outs RC:$ra), (ins MemOpnd:$addr),
      !strconcat(instr_asm, "\t$ra, $addr"),
      [(set RC:$ra, (OpNode addr:$addr))]>;
 
-class StoreM<bits<8> op, string instr_asm, PatFrag OpNode,
+class StoreM<bits<6> op, string instr_asm, PatFrag OpNode,
     RegisterClass RC, Operand MemOpnd>:
   FMem<op, (outs), (ins RC:$ra, MemOpnd:$addr),
      !strconcat(instr_asm, "\t$ra, $addr"),
      [(OpNode RC:$ra, addr:$addr)]>;
 
-class CBranch16<bits<8> op, string instr_asm, PatFrag cond_op,
+class CBranch16<bits<6> op, string instr_asm, PatFrag cond_op,
     RegisterClass RC>:
   FL<op, (outs), (ins RC:$ra, RC:$rb, brtarget16:$imm16),
              !strconcat(instr_asm, "\t$ra, $rb, $imm16"),
-             [(brcond (i32 (cond_op RC:$ra, RC:$rb)), bb:$imm16)]> {
+             [(brcond (i32 (cond_op RC:$ra, RC:$rb)), bb:$imm16)]> 
+{
   let isBranch = 1;
   let isTerminator = 1;
   let Defs = [AT];
 }
 
-class JumpFR<bits<8> op, string instr_asm, RegisterClass RC>:
+class JumpFR<bits<6> op, string instr_asm, RegisterClass RC>:
   FL<op, (outs), (ins RC:$ra),
-     !strconcat(instr_asm, "\t$ra"), [(brind RC:$ra)]> {
+     !strconcat(instr_asm, "\t$ra"), [(brind RC:$ra)]> 
+{
   let isBranch = 1;
   let isBarrier = 1;
   let isTerminator = 1;
@@ -242,25 +248,27 @@ class JumpFR<bits<8> op, string instr_asm, RegisterClass RC>:
   let imm16 = 0;
 }
 
-class RetBase<RegisterClass RC>: JumpFR<0x3c, "ret", RC> {
+class RetBase<RegisterClass RC>: JumpFR<0x3c, "ret", RC> 
+{
   let isReturn = 1;
   let isCodeGenOnly = 1;
   let hasCtrlDep = 1;
   let hasExtraSrcRegAllocReq = 1;
 }
 
-class JumpLinkReg<bits<8> op, string instr_asm,
+class JumpLinkReg<bits<6> op, string instr_asm,
                   RegisterClass RC>:
   FA<op, (outs), (ins RC:$rb, variable_ops),
-     !strconcat(instr_asm, "\t$rb"), [(Cpu0JmpLink RC:$rb)]> {
+     !strconcat(instr_asm, "\t$rb"), [(Cpu0JmpLink RC:$rb)]> 
+{
   let rc = 0;
-  let ra = 14;
-  let shamt = 0;
+  let ra = 7;
   let isCall = 1;
 }
 
 let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
-    hasDelaySlot = 1, hasExtraSrcRegAllocReq = 1, Defs = [AT] in {
+    hasDelaySlot = 1, hasExtraSrcRegAllocReq = 1, Defs = [AT] in 
+{
   class TailCall<Instruction JumpInst>:
     Cpu0Instr_PseudoSE<(outs), (ins calltarget:$target), []>,
     PseudoInstExpansion<(JumpInst jmptarget:$target)>;
@@ -271,24 +279,21 @@ let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
     PseudoInstExpansion<(JRInst ResRO:$rs)>;
 }
 
-class EffectiveAddress<string instr_asm, RegisterClass RC, Operand Mem>:
-  FMem<0x09, (outs RC:$ra), (ins Mem:$addr),
-     instr_asm, [(set RC:$ra, addr:$addr)]>;
-
 // ****************************************************************************
 // Pseudo instructions
 
 // As stack alignment is always done with addiu, we need a 16-bit immediate
-let Defs = [SP], Uses = [SP] in {
-def ADJCALLSTACKDOWN : Cpu0Instr_Pseudo<(outs), (ins uimm16:$amt),
-                                  "!ADJCALLSTACKDOWN $amt",
-                                  [(callseq_start timm:$amt)]>;
-def ADJCALLSTACKUP   : Cpu0Instr_Pseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
-                                  "!ADJCALLSTACKUP $amt1",
-                                  [(callseq_end timm:$amt1, timm:$amt2)]>;
+let Defs = [SP], Uses = [SP] in
+{
+  def ADJCALLSTACKDOWN: Cpu0Instr_Pseudo<(outs), (ins uimm16:$amt),
+      "!ADJCALLSTACKDOWN $amt",
+      [(callseq_start timm:$amt)]>;
+  def ADJCALLSTACKUP: Cpu0Instr_Pseudo<(outs),
+      (ins uimm16:$amt1, uimm16:$amt2),
+      "!ADJCALLSTACKUP $amt1",
+      [(callseq_end timm:$amt1, timm:$amt2)]>;
 }
 
-//@def CPRESTORE {
 // When handling PIC code the assembler needs .cpload and .cprestore
 // directives. If the real instructions corresponding these directives
 // are used, we have the same behavior, but get also a bunch of warnings
@@ -297,37 +302,39 @@ let hasSideEffects = 0 in
 def CPRESTORE : Cpu0Instr_Pseudo<(outs), (ins i32imm:$loc, CPURegs:$gp),
                            ".cprestore\t$loc", []>;
 
+let isReturn=1, isTerminator=1, hasDelaySlot=0, isBarrier=1, hasCtrlDep=1 in
+  def RetLR : Cpu0Instr_Pseudo<(outs), (ins), "", [(Cpu0Ret)]>;
+
+
 // ****************************************************************************
 // Instruction definition
 
-def ADDiu   : ArithLogic_RRI<0xaa, "addi", add, simm16, immSExt16, CPURegs>;
-def ORi     : ArithLogic_RRI<0xf0, "ori", or, uimm16, immZExt16, CPURegs>;
-def LUi     : LoadUpper<0xf1, "lui", GPROut, uimm16>;
+// cpu0 already have. (a few modificaitons)
+def ADDu  : ArithLogicInstr_RRR < 0x0 , "add"  , add          , CPURegs , 1>;
+def SUBu  : ArithLogicInstr_RRR < 0x1 , "sub"  , sub          , CPURegs>;
+def MULu  : ArithLogicInstr_RRR < 0x2 , "mul"  , mul          , CPURegs>;
+// 0x3: division not implemented
+def AND   : ArithLogicInstr_RRR < 0x4 , "and"  , and          , CPURegs , 1>;
+def OR    : ArithLogicInstr_RRR < 0x5 , "or"   , or           , CPURegs , 1>;
+def XOR   : ArithLogicInstr_RRR < 0x6 , "xor"  , xor          , CPURegs , 1>; // replaces `not`
+def LD    : LoadM               < 0x7 , "loa"  , alignedload  , GPROut  , mem>;
+def ST    : StoreM              < 0x8 , "sto"  , alignedstore , CPURegs , mem>;
+def SHRV  : ArithLogicInstr_RRR < 0x9 , "shr"  , srl          , CPURegs>;
+def SHLV  : ArithLogicInstr_RRR < 0xa , "shl"  , shl          , CPURegs>;
+def BEQ   : CBranch16           < 0xb , "beq"  , seteq        , GPROut>;
+def BLT   : CBranch16           < 0xc , "blt"  , setult       , GPROut>;
+def ADDiu : ArithLogic_RRI      < 0xd , "addi" , add          , simm16  , immSExt16 , CPURegs>;  // replaces ll
 
-def ADDu    : ArithLogicInstr_RRR<0x11, "add", add, CPURegs, 1>;
-def SUBu    : ArithLogicInstr_RRR<0x12, "sub", sub, CPURegs>;
-def MULu    : ArithLogicInstr_RRR<0x13, "mul", mul, CPURegs>;
+// extensions
+def LUi     : LoadUpper<0xe, "lui", GPROut, uimm16>;
 
-def AND     : ArithLogicInstr_RRR<0x18, "and", and, CPURegs, 1>;
-def OR      : ArithLogicInstr_RRR<0x19, "or", or, CPURegs, 1>;
-def XOR     : ArithLogicInstr_RRR<0x1a, "xor", xor, CPURegs, 1>;
-def SHLV    : ArithLogicInstr_RRR<0x1b, "shl", shl, CPURegs>;
-def SHRV    : ArithLogicInstr_RRR<0x1c, "shr", srl, CPURegs>;
-
-def LD     : LoadM<0x01,  "loa",  load_a, GPROut, mem>;
-def ST     : StoreM<0x02, "sto",  store_a, CPURegs, mem>;
+// should be removed in th future
+def ORi     : ArithLogic_RRI<0x10, "ori", or, uimm16, immZExt16, CPURegs>;
 def LB     : LoadM<0x03, "lb", sextloadi8, GPROut, mem>;
 def SB     : StoreM<0x04, "sb", truncstorei8, CPURegs, mem>;
-
-def BEQ     : CBranch16<0x31, "beq", seteq, GPROut>;
-def BNE     : CBranch16<0x32, "bne", setne, GPROut>; // TODO: delete
-def BLT     : CBranch16<0x33, "blt", setult, GPROut>;
-
+def BNE     : CBranch16<0x32, "bne", setne, GPROut>;
 def JR      : JumpFR<0x34, "jr", GPROut>;
 def JALR    : JumpLinkReg<0x35, "jalr", GPROut>;
-
-let isReturn=1, isTerminator=1, hasDelaySlot=0, isBarrier=1, hasCtrlDep=1 in
-  def RetLR : Cpu0Instr_Pseudo<(outs), (ins), "", [(Cpu0Ret)]>;
 
 def RET     : RetBase<GPROut>;
 
@@ -337,6 +344,9 @@ def TAILCALL_R : TailCallReg<GPROut, JR>;
 // instructions. The same not happens for stack address copies, so an
 // add op with mem ComplexPattern is used and the stack address copy
 // can be matched. It's similar to Sparc LEA_ADDRi
+class EffectiveAddress<string instr_asm, RegisterClass RC, Operand Mem>:
+  FMem<0xd, (outs RC:$ra), (ins Mem:$addr),
+     instr_asm, [(set RC:$ra, addr:$addr)]>;
 def LEA_ADDiu : EffectiveAddress<"addiu\t$ra, $addr", CPURegs, mem_ea> {
   let isCodeGenOnly = 1;
 }

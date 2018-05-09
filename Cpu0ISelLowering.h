@@ -60,7 +60,10 @@ namespace llvm {
       DivRem,
       DivRemU,
 
+			// an int binary operation wrapper
+			//	used to represnt global addresses
       Wrapper,
+
       DynAlloc,
 
       Sync

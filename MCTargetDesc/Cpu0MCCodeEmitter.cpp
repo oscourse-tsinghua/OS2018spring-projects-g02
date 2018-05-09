@@ -102,16 +102,6 @@ getBranch16TargetOpValue(const MCInst &MI, unsigned OpNo,
   return 0;
 }
 
-/// getBranch24TargetOpValue - Return binary encoding of the branch
-/// target operand. If the machine operand requires relocation,
-/// record the relocation and return zero.
-unsigned Cpu0MCCodeEmitter::
-getBranch24TargetOpValue(const MCInst &MI, unsigned OpNo,
-                       SmallVectorImpl<MCFixup> &Fixups,
-                       const MCSubtargetInfo &STI) const {
-  return 0;
-}
-
 
 //@getExprOpValue {
 unsigned Cpu0MCCodeEmitter::

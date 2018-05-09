@@ -52,33 +52,47 @@ class Cpu0Instr_PseudoSE<dag outs, dag ins, list<dag> pattern>:
 }
 
 
-class FA<bits<8> opcode, dag outs, dag ins, string asmstr,
+// FA
+//  syntax: op rx ry rz
+//  semantics: rx = ry op rz
+//  encoding:
+//     6      5     5     5     11
+//   opcode   rx    ry    rz    reserved (must be zero)
+
+class FA<bits<6> opcode, dag outs, dag ins, string asmstr,
          list<dag> pattern>:
       Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_A>
 {
-  bits<4>  ra;
-  bits<4>  rb;
-  bits<4>  rc;
-  bits<12> shamt;
+  bits<5>  ra;
+  bits<5>  rb;
+  bits<5>  rc;
+  bits<11> reserved = 0;
 
-  let Inst{31-24} = opcode;
-  let Inst{23-20} = ra;
-  let Inst{19-16} = rb;
-  let Inst{15-12} = rc;
-  let Inst{11-0}  = shamt;
+  let Inst{31-26} = opcode;
+  let Inst{25-21} = ra;
+  let Inst{20-16} = rb;
+  let Inst{15-11} = rc;
+  let Inst{10-0} = reserved;
 }
 
 
-class FL<bits<8> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>: 
+// FL
+//  syntax: op rx ry imm16
+//  semantics: rx = ry op imm16
+//  encoding:
+//     6      5     5     16
+//   opcode   rx    ry    imm16
+
+class FL<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>: 
   Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_B>
 {
-  bits<4>  ra;
-  bits<4>  rb;
+  bits<5>  ra;
+  bits<5>  rb;
   bits<16> imm16;
 
-  let Inst{31-24} = opcode;
-  let Inst{23-20} = ra;
-  let Inst{19-16} = rb;
-  let Inst{15-0}  = imm16;
+  let Inst{31-26} = opcode;
+  let Inst{25-21} = ra;
+  let Inst{20-16} = rb;
+  let Inst{15-0} = imm16;
 }
 

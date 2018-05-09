@@ -16,6 +16,8 @@ class Cpu0Reg<bits<16> Enc, string n> : Register<n> {
 
 class Cpu0GPRReg<bits<16> Enc, string n> : Cpu0Reg<Enc, n>;
 
+// By design we have 32 registers in Litecpu
+//  And for now we do not yet have a coprocessor.
 
 let Namespace = "Cpu0" in {
   // defined by Cpu0
