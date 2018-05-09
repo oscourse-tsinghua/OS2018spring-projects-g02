@@ -90,8 +90,6 @@ def simm16      : Operand<i32>
   let DecoderMethod= "DecodeSimm16";
 }
 
-def shamt       : Operand<i32>;
-
 // Unsigned Operand
 def uimm16      : Operand<i32> 
 {
@@ -113,24 +111,20 @@ def mem_ea : Operand<iPTR>
   let EncoderMethod = "getMemEncoding";
 }
 
-// Transformation Function - get the lower 16 bits.
+// transformation function - get the lower 16 bits.
 def LO16 : SDNodeXForm<imm, [{
   return getImm(N, N->getZExtValue() & 0xffff);
 }]>;
 
-// Transformation Function - get the higher 16 bits.
+// transformation function - get the higher 16 bits.
 def HI16 : SDNodeXForm<imm, [{
   return getImm(N, (N->getZExtValue() >> 16) & 0xffff);
 }]>;
 
-// Node immediate fits as 16-bit sign extended on target immediate.
-// e.g. addi, andi
+// if imm can be expressed by 16-bit signed
 def immSExt16  : PatLeaf<(imm), [{ return isInt<16>(N->getSExtValue()); }]>;
 
-// Node immediate fits as 16-bit zero extended on target immediate.
-// The LO16 param means that only the lower 16 bits of the node
-// immediate are caught.
-// e.g. addiu, sltiu
+// if imm fits into 16-bit unsigned. if so, truncate to the lower 16 bits.
 def immZExt16  : PatLeaf<(imm), [{
   if (N->getValueType(0) == MVT::i32)
     return (uint32_t)N->getZExtValue() == (unsigned short)N->getZExtValue();
@@ -138,19 +132,16 @@ def immZExt16  : PatLeaf<(imm), [{
     return (uint64_t)N->getZExtValue() == (unsigned short)N->getZExtValue();
 }], LO16>;
 
-// Immediate can be loaded with LUi (32-bit int with lower 16-bit cleared).
+// if imm fits into 32-bit signed, with the lower 16 bits zero.
 def immLow16Zero : PatLeaf<(imm), [{
   int64_t Val = N->getSExtValue();
   return isInt<32>(Val) && !(Val & 0xffff);
 }]>;
 
-// shamt field must fit in 5 bits.
-def immZExt5 : ImmLeaf<i32, [{return Imm == (Imm & 0x1f);}]>;
-
 // Cpu0 Address Mode! SDNode frameindex could possibily be a match
 // since load and store instructions from stack used it.
-def addr:
-  ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
+def addr: ComplexPattern<iPTR, 2, "SelectAddr",
+    [frameindex], [SDNPWantParent]>;
 
 // load and store of each type should be aligned to the size of that type
 // e.g. load/store word should be aligned to a 4 byte boundary
@@ -206,16 +197,18 @@ class LoadUpper<bits<6> op, string instr_asm, RegisterClass RC, Operand Imm>:
 class FMem<bits<6> op, dag outs, dag ins, string asmstr, list<dag> pattern>:
   FL<op, outs, ins, asmstr, pattern>
 {
-  bits<20> addr;
-  let Inst{19-16} = addr{19-16};
-  let Inst{15-0}  = addr{15-0};
-  let DecoderMethod = "DecodeMem";
+  bits<21> addr;
+  let rb = addr{20-16};
+  let imm16  = addr{15-0};
 }
 
+// MemOpnd is `mem` or similar: it is the type of the operand $addr
+// OpNode is `alignedload` or similar: it is the operation applied
+//  to the operand $addr
 let canFoldAsLoad = 1 in
 class LoadM<bits<6> op, string instr_asm, PatFrag OpNode,
     RegisterClass RC, Operand MemOpnd>:
-  FMem<op, (outs RC:$ra), (ins MemOpnd:$addr),
+  FMem<op, (outs RC:$ra), (ins MemOpnd:$addr),  
      !strconcat(instr_asm, "\t$ra, $addr"),
      [(set RC:$ra, (OpNode addr:$addr))]>;
 
@@ -248,7 +241,7 @@ class JumpFR<bits<6> op, string instr_asm, RegisterClass RC>:
   let imm16 = 0;
 }
 
-class RetBase<RegisterClass RC>: JumpFR<0x3c, "ret", RC> 
+class RetBase<RegisterClass RC>: JumpFR<0x14, "ret", RC> 
 {
   let isReturn = 1;
   let isCodeGenOnly = 1;
@@ -330,11 +323,11 @@ def LUi     : LoadUpper<0xe, "lui", GPROut, uimm16>;
 
 // should be removed in th future
 def ORi     : ArithLogic_RRI<0x10, "ori", or, uimm16, immZExt16, CPURegs>;
-def LB     : LoadM<0x03, "lb", sextloadi8, GPROut, mem>;
-def SB     : StoreM<0x04, "sb", truncstorei8, CPURegs, mem>;
-def BNE     : CBranch16<0x32, "bne", setne, GPROut>;
-def JR      : JumpFR<0x34, "jr", GPROut>;
-def JALR    : JumpLinkReg<0x35, "jalr", GPROut>;
+def LB     : LoadM<0x11, "lb", sextloadi8, GPROut, mem>;
+def SB     : StoreM<0x12, "sb", truncstorei8, CPURegs, mem>;
+def BNE     : CBranch16<0x13, "bne", setne, GPROut>;
+def JR      : JumpFR<0x14, "jr", GPROut>;
+def JALR    : JumpLinkReg<0x15, "jalr", GPROut>;
 
 def RET     : RetBase<GPROut>;
 

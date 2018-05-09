@@ -62,12 +62,10 @@ SDNode *Cpu0DAGToDAGISel::getGlobalBaseReg() {
       .getNode();
 }
 
-//@SelectAddr {
 /// ComplexPattern used on Cpu0InstrInfo
 /// Used on Cpu0 Load/Store instructions
 bool Cpu0DAGToDAGISel::
 SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
-//@SelectAddr }
   EVT ValTy = Addr.getValueType();
   SDLoc DL(Addr);
 
