@@ -1,45 +1,17 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
-#include <elf.h>
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
+
+#include "machine.h"
 
 // EM_CPU0 == 999
 #define EM_CPU0 0x3e7
 
-#define VMA_PERM_MASK 0x07
-typedef struct vma_t {
-  uint32_t begin;
-  uint32_t end;
-  uint8_t perm;
-  uint8_t* data;
-  struct vma_t* next;
-} vma_t;
-
-typedef struct mm_t {
-  vma_t* vma;
-} mm_t;
-
-#define NUM_REGS 32
-#define REG_PC 0
-#define REG_SP 1
-#define REG_FP 2
-#define REG_ZR 3
-#define REG_SW 4
-#define REG_WR 5
-typedef uint32_t reg_t[NUM_REGS];
-
-typedef struct machine_t {
-  mm_t mm;
-  reg_t regs;
-} machine_t;
-
-#define MAX_IMG_SZ 8*1024*1024 
 // object image cannot be greater than 8MB
+#define MAX_IMG_SZ 8*1024*1024 
 
-
-machine_t* load_elf(const char* filename)
+void load_elf(const char* filename, machine_t* rv)
 {
   // load object into memory
   FILE* fin = fopen(filename, "r");
@@ -47,7 +19,6 @@ machine_t* load_elf(const char* filename)
   static uint8_t img[MAX_IMG_SZ];
   assert(fread(img, 1, MAX_IMG_SZ, fin) < MAX_IMG_SZ && "object too big!");
 
-  machine_t* rv = calloc(sizeof(machine_t), 1);
   rv->mm.vma = NULL;
 
   Elf32_Ehdr* eheader = (Elf32_Ehdr*) img;
@@ -91,8 +62,30 @@ machine_t* load_elf(const char* filename)
         (vma->perm & PF_W) ? 1 : 0,
         (vma->perm & PF_X) ? 1 : 0);
   }
+
+  // XXX: dirty hack to initialize a read / writable stack
+  vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
+  vma->begin = 0xFFF00000; // 65536 bytes of kernel stack
+  vma->end = vma->begin + 0x10000;   // don't cross zero
+  vma->perm = PF_W | PF_R;
+  vma->next = rv->mm.vma;
+  rv->mm.vma = vma;
+  vma->data = calloc(0x10000, 1);
 }
 
+
+extern void machine_init(machine_t* m);
+extern void exec_inst(machine_t* m, uint32_t inst);
+
+void cpu_execute(machine_t* m, unsigned num_cycles)
+{
+  while (num_cycles--) {
+    mem_exec(m, m->regs[REG_PC], exec_inst);
+  }
+}
+
+
+machine_t machine;
 /* emulator is written in C.
  * for performance reasons.
  *
@@ -102,11 +95,16 @@ machine_t* load_elf(const char* filename)
  */
 int main(int argc, char** argv)
 {
-  if (argc != 2) {
-    printf("Usage: %s FILE\n", argv[0]);
+  if (argc != 3) {
+    printf("Usage: %s FILE CYCLES\n", argv[0]);
     printf("  FILE: executable object.\n");
+    printf("  CYCLES: number of execution cycles.\n");
     return 0;
   }
 
-  load_elf(argv[1]);
+  machine_init(&machine);  
+
+  load_elf(argv[1], &machine);
+
+  cpu_execute(&machine, atoi(argv[2]));
 }
