@@ -47,8 +47,8 @@ let Namespace = "Cpu0" in {
 
   // caller saved
   def T0: Cpu0GPRReg<15, "t0">, DwarfRegNum<[15]>;
-  def T1: Cpu0GPRReg<15, "t1">, DwarfRegNum<[16]>;
-  def T9: Cpu0GPRReg<15, "t9">, DwarfRegNum<[17]>;
+  def T1: Cpu0GPRReg<16, "t1">, DwarfRegNum<[16]>;
+  def T9: Cpu0GPRReg<17, "t9">, DwarfRegNum<[17]>;
 }
 
 
