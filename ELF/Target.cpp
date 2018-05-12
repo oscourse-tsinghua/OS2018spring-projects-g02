@@ -2153,6 +2153,8 @@ RelExpr Cpu0TargetInfo<ELFT>::getRelExpr(uint32_t Type,
   case R_CPU0_HI16:
   case R_CPU0_LO16:
     return R_ABS;
+  case R_CPU0_PC24:
+    return R_PC;
   }
 }
 
@@ -2193,6 +2195,9 @@ void Cpu0TargetInfo<ELFT>::relocateOne(uint8_t *Loc, uint32_t Type,
     break;
   case R_CPU0_HI16:
     writeCpu0Hi16<E>(Loc, Val);
+    break;
+  case R_CPU0_PC24:
+    applyCpu0PcReloc<E, 26, 0>(Loc, Val-4);
     break;
   default:
     fatal("unrecognized reloc " + Twine(Type));
