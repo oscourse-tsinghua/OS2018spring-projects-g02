@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "common.h"
 #include "machine.h"
 
 // EM_CPU0 == 999
@@ -67,12 +68,15 @@ void load_elf(const char* filename, machine_t* rv)
 
   // XXX: dirty hack to initialize a read / writable stack
   vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
-  vma->begin = 0xFFF00000; // 65536 bytes of kernel stack
-  vma->end = vma->begin + 0x10000;   // don't cross zero
+  vma->begin = STACK_POS; // 65536 bytes of kernel stack
+  vma->end = vma->begin + STACK_SIZE;   // don't cross zero
+  assert(vma->end > vma->begin);
   vma->perm = PF_W | PF_R;
   vma->next = rv->mm.vma;
   rv->mm.vma = vma;
-  vma->data = calloc(0x10000, 1);
+  vma->data = calloc(STACK_SIZE, 1); // 1 MB of stack space
+  printf("stack %08X-%08X (%d)\n",
+      vma->begin, vma->end, STACK_SIZE);
 }
 
 

@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "common.h"
 
 uint32_t excep = 0;
 
@@ -15,16 +16,23 @@ void machine_init(machine_t* m)
   m->regs[REG_ZR] = 0;
 
   // dirty hack
-  m->regs[REG_SP] = 0xFFF00000 + 0x10000 - 4;
+  m->regs[REG_SP] = STACK_POS + STACK_SIZE - 4;
 }
 
-#define decode_opcode(i) ((i>>26) & 0x3F)
-#define decode_rx(i) ((i>>21) & 0x1F)
-#define decode_ry(i) ((i>>16) & 0x1F)
-#define decode_rz(i) ((i>>11) & 0x1F)
-#define decode_imm16(i) (i & 0xFFFF)
-#define decode_imm16sext(i) ((int) ((short) (i & 0xFFFF)))
-
+#define decode_opcode(i) (((i)>>26) & 0x3F)
+#define decode_rx(i) (((i)>>21) & 0x1F)
+#define decode_ry(i) (((i)>>16) & 0x1F)
+#define decode_rz(i) (((i)>>11) & 0x1F)
+#define decode_imm16(i) ((i) & 0xFFFF)
+#define decode_imm16sext(i) ((int) ((short) ((i) & 0xFFFF)))
+#define decode_imm26(i) ((i) & 0x3FFFFFF)
+static inline uint32_t decode_imm26sext(uint32_t i) {
+  if (i & (1<<25)) {
+    return i | 0xFC000000;
+  } else {
+    return i & 0x03FFFFFF;
+  }
+}
 
 #define OPCODE_ADD 0
 #define OPCODE_SUB 1
@@ -53,11 +61,13 @@ void machine_init(machine_t* m)
 #define OPCODE_BNE 19
 #define OPCODE_JR 20
 #define OPCODE_JALR 21
+#define OPCODE_JSUB 22
 
-#ifdef DEBUG
+#ifdef INSTR_WATCH
 
 #define INSTR_TYPE_R 1
 #define INSTR_TYPE_I 2
+#define INSTR_TYPE_J 3
 
 int instr_type(uint32_t opcode)
 {
@@ -66,8 +76,15 @@ int instr_type(uint32_t opcode)
     case OPCODE_AND: case OPCODE_OR:  case OPCODE_XOR: case OPCODE_SHR:
     case OPCODE_SHL:
       return INSTR_TYPE_R;
-    default:
+    case OPCODE_LD:  case OPCODE_ST:  case OPCODE_BEQ: case OPCODE_BLT:
+    case OPCODE_ADDIU: case OPCODE_LUI: case OPCODE_ORI:
+    case OPCODE_LB: case OPCODE_SB: case OPCODE_BNE: case OPCODE_JR:
+    case OPCODE_JALR:
       return INSTR_TYPE_I;
+    case OPCODE_JSUB:
+      return INSTR_TYPE_J;
+    default:
+      assert(0 && "bad opcode");
   }
 }
 
@@ -76,6 +93,7 @@ int instr_type(uint32_t opcode)
 
 void exec_inst(machine_t* m, uint32_t inst)
 {
+  assert(!((m->regs[REG_PC]) & 3) && "unaligned IF");
   m->regs[REG_PC] += sizeof(uint32_t);
   uint32_t opcode = decode_opcode(inst);
   uint32_t rx = decode_rx(inst);
@@ -83,9 +101,9 @@ void exec_inst(machine_t* m, uint32_t inst)
   uint32_t rz = decode_rz(inst);
   uint32_t imm = decode_imm16(inst);
   uint32_t immsext = decode_imm16sext(inst);
+  uint32_t imm26sext = decode_imm26sext(inst);
 
-#ifdef DEBUG
-
+#ifdef INSTR_WATCH
   switch (instr_type(opcode)) {
     case INSTR_TYPE_R:
       printf("* [%08X]{%08X} opcode=%d, rx=%d, ry=%d, rz=%d\n",
@@ -94,6 +112,10 @@ void exec_inst(machine_t* m, uint32_t inst)
     case INSTR_TYPE_I:
       printf("* [%08X]{%08X} opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
           m->regs[REG_PC], inst, opcode, rx, ry, immsext, imm);
+      break;
+    case INSTR_TYPE_J:
+      printf("* [%08X]{%08X} opcode=%d, imm=%d (hex=%08X)\n",
+          m->regs[REG_PC], inst, opcode, imm26sext, imm26sext);
       break;
     default:
       assert(0 && "bad instr type");
@@ -168,13 +190,15 @@ void exec_inst(machine_t* m, uint32_t inst)
         m->regs[REG_PC] += immsext;
       break;
     case OPCODE_JR:
-      printf("JR: %d\n", rx);
       m->regs[REG_PC] = m->regs[rx];
       break;
     case OPCODE_JALR:
-      printf("JALR: %d\n", rx);
       m->regs[REG_LR] = m->regs[REG_PC];
       m->regs[REG_PC] = m->regs[rx];
+      break;
+    case OPCODE_JSUB:
+      m->regs[REG_LR] = m->regs[REG_PC];
+      m->regs[REG_PC] += imm26sext;
       break;
     default:
       assert(0 && "bad opcode!");
