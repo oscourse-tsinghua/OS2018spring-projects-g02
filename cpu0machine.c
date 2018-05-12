@@ -54,10 +54,28 @@ void machine_init(machine_t* m)
 #define OPCODE_JR 20
 #define OPCODE_JALR 21
 
+#ifdef DEBUG
+
+#define INSTR_TYPE_R 1
+#define INSTR_TYPE_I 2
+
+int instr_type(uint32_t opcode)
+{
+  switch (opcode) {
+    case OPCODE_ADD: case OPCODE_SUB: case OPCODE_MUL: case OPCODE_DIV:
+    case OPCODE_AND: case OPCODE_OR:  case OPCODE_XOR: case OPCODE_SHR:
+    case OPCODE_SHL:
+      return INSTR_TYPE_R;
+    default:
+      return INSTR_TYPE_I;
+  }
+}
+
+#endif
+
 
 void exec_inst(machine_t* m, uint32_t inst)
 {
-  printf("* %08X\n", inst);
   m->regs[REG_PC] += sizeof(uint32_t);
   uint32_t opcode = decode_opcode(inst);
   uint32_t rx = decode_rx(inst);
@@ -65,6 +83,23 @@ void exec_inst(machine_t* m, uint32_t inst)
   uint32_t rz = decode_rz(inst);
   uint32_t imm = decode_imm16(inst);
   uint32_t immsext = decode_imm16sext(inst);
+
+#ifdef DEBUG
+
+  switch (instr_type(opcode)) {
+    case INSTR_TYPE_R:
+      printf("* [%08X]{%08X} opcode=%d, rx=%d, ry=%d, rz=%d\n",
+          m->regs[REG_PC], inst, opcode, rx, ry, rz);
+      break;
+    case INSTR_TYPE_I:
+      printf("* [%08X]{%08X} opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
+          m->regs[REG_PC], inst, opcode, rx, ry, immsext, imm);
+      break;
+    default:
+      assert(0 && "bad instr type");
+  }
+
+#endif
 
   int err = 0;
 

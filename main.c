@@ -48,14 +48,16 @@ void load_elf(const char* filename, machine_t* rv)
 
     // initialize memory region
     vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
-    assert(pheader->p_memsz == pheader->p_filesz); // TODO: bss
+    assert(pheader->p_memsz >= pheader->p_filesz);
+    // the beginning p_filesz bytes are loaded from file
+    // while the rest are filled with zero
     vma->begin = pheader->p_vaddr;
     vma->end = pheader->p_vaddr + pheader->p_memsz;
     vma->perm = pheader->p_flags & VMA_PERM_MASK;
     vma->next = rv->mm.vma;
     rv->mm.vma = vma;
     vma->data = calloc(pheader->p_memsz, 1);
-    memcpy(vma->data, img + pheader->p_offset, pheader->p_memsz);
+    memcpy(vma->data, img + pheader->p_offset, pheader->p_filesz);
     printf("region %08X - %08x (%d): rwx=%d%d%d\n",
         vma->begin, vma->end, pheader->p_memsz,
         (vma->perm & PF_R) ? 1 : 0,
