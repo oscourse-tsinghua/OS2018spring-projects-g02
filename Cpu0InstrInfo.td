@@ -18,7 +18,7 @@ def SDT_Cpu0CallSeqStart : SDCallSeqStart<[SDTCisVT<0, i32>]>;
 def SDT_Cpu0CallSeqEnd   : SDCallSeqEnd<[SDTCisVT<0, i32>, SDTCisVT<1, i32>]>;
 
 
-def Cpu0JmpLink : SDNode<"Cpu0ISD::JmpLink",SDT_Cpu0JmpLink,
+def Cpu0JmpLink : SDNode<"Cpu0ISD::JmpLink", SDT_Cpu0JmpLink,
                          [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
                           SDNPVariadic]>;
 
@@ -249,6 +249,10 @@ class RetBase<RegisterClass RC>: JumpFR<0x14, "ret", RC>
   let hasExtraSrcRegAllocReq = 1;
 }
 
+class JumpLink<bits<6> op, string instr_asm>:
+  FJ<op, (outs), (ins calltarget:$target, variable_ops),
+     !strconcat(instr_asm, "\t$target"), [(Cpu0JmpLink imm:$target)]>;
+
 class JumpLinkReg<bits<6> op, string instr_asm,
                   RegisterClass RC>:
   FA<op, (outs), (ins RC:$rb, variable_ops),
@@ -328,6 +332,7 @@ def SB     : StoreM<0x12, "sb", truncstorei8, CPURegs, mem>;
 def BNE     : CBranch16<0x13, "bne", setne, GPROut>;
 def JR      : JumpFR<0x14, "jr", GPROut>;
 def JALR    : JumpLinkReg<0x15, "jalr", GPROut>;
+def JSUB    : JumpLink<0x16, "jsub">;
 
 def RET     : RetBase<GPROut>;
 
@@ -369,15 +374,15 @@ def : Pat<(i32 immLow16Zero:$in),
 def : Pat<(i32 imm:$imm),
           (ORi (LUi (HI16 imm:$imm)), (LO16 imm:$imm))>;
 
-def : Pat<(Cpu0JmpLink (i32 tglobaladdr:$dst)),
-          (JALR tglobaladdr:$dst)>;
-def : Pat<(Cpu0JmpLink (i32 texternalsym:$dst)),
-          (JALR texternalsym:$dst)>;
-
 def : Pat<(Cpu0TailCall (iPTR tglobaladdr:$dst)),
               (TAILCALL_R tglobaladdr:$dst)>;
 def : Pat<(Cpu0TailCall (iPTR texternalsym:$dst)),
               (TAILCALL_R texternalsym:$dst)>;
+
+def : Pat<(Cpu0JmpLink (i32 tglobaladdr:$dst)),
+          (JSUB tglobaladdr:$dst)>;
+def : Pat<(Cpu0JmpLink (i32 texternalsym:$dst)),
+          (JSUB texternalsym:$dst)>;
 
 // hi/lo relocs
 def : Pat<(Cpu0Hi tglobaladdr:$in), (LUi tglobaladdr:$in)>;
@@ -394,6 +399,7 @@ def : Pat<(add CPURegs:$hi, (Cpu0Lo tblockaddress:$lo)),
               (ORi CPURegs:$hi, tblockaddress:$lo)>;
 def : Pat<(add CPURegs:$hi, (Cpu0Lo tjumptable:$lo)),
               (ORi CPURegs:$hi, tjumptable:$lo)>;
+
 
 // gp_rel relocs
 def : Pat<(add CPURegs:$gp, (Cpu0GPRel tglobaladdr:$in)),

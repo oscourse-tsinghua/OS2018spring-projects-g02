@@ -103,6 +103,30 @@ getBranch16TargetOpValue(const MCInst &MI, unsigned OpNo,
 }
 
 
+/// getJumpTargetOpValue - Return binary encoding of the jump
+/// target operand, such as JSUB. 
+/// If the machine operand requires relocation,
+/// record the relocation and return zero.
+unsigned Cpu0MCCodeEmitter::
+getJumpTargetOpValue(const MCInst &MI, unsigned OpNo,
+                     SmallVectorImpl<MCFixup> &Fixups,
+                     const MCSubtargetInfo &STI) const {
+  unsigned Opcode = MI.getOpcode();
+  const MCOperand &MO = MI.getOperand(OpNo);
+  // If the destination is an immediate, we have nothing to do.
+  if (MO.isImm()) return MO.getImm();
+  assert(MO.isExpr() && "getJumpTargetOpValue expects only expressions");
+
+  const MCExpr *Expr = MO.getExpr();
+  if (Opcode == Cpu0::JSUB)
+    Fixups.push_back(MCFixup::create(0, Expr,
+                                     MCFixupKind(Cpu0::fixup_Cpu0_PC24)));
+  else
+    llvm_unreachable("unexpect opcode in getJumpAbsoluteTargetOpValue()");
+
+  return 0;
+}
+
 //@getExprOpValue {
 unsigned Cpu0MCCodeEmitter::
 getExprOpValue(const MCExpr *Expr,SmallVectorImpl<MCFixup> &Fixups,

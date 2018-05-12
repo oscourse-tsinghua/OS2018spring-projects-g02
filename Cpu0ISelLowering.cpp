@@ -49,6 +49,7 @@ SDValue Cpu0TargetLowering::getGlobalReg(SelectionDAG &DAG, EVT Ty) const {
 SDValue Cpu0TargetLowering::getTargetNode(GlobalAddressSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
+  printf("getTargetNode: GlobalAddressSDNode\n");
   return DAG.getTargetGlobalAddress(N->getGlobal(), SDLoc(N), Ty, 0, Flag);
 }
 
@@ -56,18 +57,21 @@ SDValue Cpu0TargetLowering::getTargetNode(GlobalAddressSDNode *N, EVT Ty,
 SDValue Cpu0TargetLowering::getTargetNode(ExternalSymbolSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
+  printf("getTargetNode: ExternalSymbolSDNode\n");
   return DAG.getTargetExternalSymbol(N->getSymbol(), Ty, Flag);
 }
 
 SDValue Cpu0TargetLowering::getTargetNode(BlockAddressSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
+  printf("getTargetNode: BlockAddressSDNode\n");
   return DAG.getTargetBlockAddress(N->getBlockAddress(), Ty, 0, Flag);
 }
 
 SDValue Cpu0TargetLowering::getTargetNode(JumpTableSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
+  printf("getTargetNode: JumpTableSDNode\n");
   return DAG.getTargetJumpTable(N->getIndex(), Ty, Flag);
 }
 
@@ -169,20 +173,19 @@ lowerBRCOND(SDValue Op, SelectionDAG &DAG) const
 
 SDValue Cpu0TargetLowering::lowerGlobalAddress(SDValue Op,
                                                SelectionDAG &DAG) const {
-  //@lowerGlobalAddress }
+  printf("lowerGlobalAddress\n");
   SDLoc DL(Op);
   const Cpu0TargetObjectFile *TLOF =
         static_cast<const Cpu0TargetObjectFile *>(
             getTargetMachine().getObjFileLowering());
-  //@lga 1 {
   EVT Ty = Op.getValueType();
   GlobalAddressSDNode *N = cast<GlobalAddressSDNode>(Op);
   const GlobalValue *GV = N->getGlobal();
-  //@lga 1 }
 
   if (!isPositionIndependent()) {
     //@ %gp_rel relocation
     if (TLOF->IsGlobalInSmallSection(GV, getTargetMachine())) {
+      assert(0 && "global in small section");
       SDValue GA = DAG.getTargetGlobalAddress(GV, DL, MVT::i32, 0,
                                               Cpu0II::MO_GPREL);
       SDValue GPRelNode = DAG.getNode(Cpu0ISD::GPRel, DL,
@@ -194,6 +197,8 @@ SDValue Cpu0TargetLowering::lowerGlobalAddress(SDValue Op,
     //@ %hi/%lo relocation
     return getAddrNonPIC(N, Ty, DAG);
   }
+
+  assert(0 && "isPositionIndependent");
 
   if (GV->hasInternalLinkage() || (GV->hasLocalLinkage() && !isa<Function>(GV)))
     return getAddrLocal(N, Ty, DAG);

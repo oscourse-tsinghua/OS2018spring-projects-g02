@@ -18,6 +18,7 @@ class Cpu0InstrEncFormat<bits<4> val> {
 def Cpu0IEF_Pseudo: Cpu0InstrEncFormat<0>;
 def Cpu0IEF_A: Cpu0InstrEncFormat<1>;
 def Cpu0IEF_B: Cpu0InstrEncFormat<2>;
+def Cpu0IEF_C: Cpu0InstrEncFormat<3>;
 
 
 class Cpu0Inst<dag outs, dag ins, string asmstr,
@@ -83,7 +84,7 @@ class FA<bits<6> opcode, dag outs, dag ins, string asmstr,
 //     6      5     5     16
 //   opcode   rx    ry    imm16
 
-class FL<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>: 
+class FL<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>:
   Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_B>
 {
   bits<5>  ra;
@@ -94,5 +95,16 @@ class FL<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>:
   let Inst{25-21} = ra;
   let Inst{20-16} = rb;
   let Inst{15-0} = imm16;
+}
+
+
+// not stable
+class FJ<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>:
+  Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_C>
+{
+  bits<26> addr;
+
+  let Inst{31-26} = opcode;
+  let Inst{25-0} = addr;
 }
 

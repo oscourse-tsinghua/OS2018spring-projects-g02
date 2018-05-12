@@ -84,6 +84,9 @@ unsigned Cpu0ELFObjectWriter::getRelocType(MCContext &Ctx,
   case Cpu0::fixup_Cpu0_GOT_LO16:
     Type = ELF::R_CPU0_GOT_LO16;
     break;
+  case Cpu0::fixup_Cpu0_PC24:
+    Type = ELF::R_CPU0_PC24;
+    break;
   }
 
   return Type;

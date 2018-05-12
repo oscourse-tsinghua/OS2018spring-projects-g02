@@ -65,6 +65,7 @@ namespace Cpu0II {
 		IEF_Pseudo = 0,
 		IEF_A = 1,
 		IEF_B = 2,
+		IEF_C = 3,
 		IEF_Mask = 15
   };
 }
