@@ -248,6 +248,9 @@ namespace llvm {
       /// Return the function that analyzes fixed argument list functions.
       llvm::CCAssignFn *fixedArgFn() const;
 
+      /// Return the function that analyzes variable argument list functions.
+      llvm::CCAssignFn *varArgFn() const;
+
       void allocateRegs(ByValArgInfo &ByVal, unsigned ByValSize,
                         unsigned Align);
 
@@ -308,6 +311,8 @@ namespace llvm {
     SDValue lowerBlockAddress(SDValue Op, SelectionDAG &DAG) const;
     SDValue lowerJumpTable(SDValue Op, SelectionDAG &DAG) const;
     SDValue lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
+    SDValue lowerVASTART(SDValue Op, SelectionDAG &DAG) const;
+
     /// isEligibleForTailCallOptimization - Check whether the call is eligible
     /// for tail call optimization.
     virtual bool
@@ -332,6 +337,12 @@ namespace llvm {
                       MachineFrameInfo *MFI, SelectionDAG &DAG, SDValue Arg,
                       const Cpu0CC &CC, const ByValArgInfo &ByVal,
                       const ISD::ArgFlagsTy &Flags, bool isLittle) const;
+
+    /// writeVarArgRegs - Write variable function arguments passed in registers
+    /// to the stack. Also create a stack frame object for the first variable
+    /// argument.
+    void writeVarArgRegs(std::vector<SDValue> &OutChains, const Cpu0CC &CC,
+                         SDValue Chain, const SDLoc &DL, SelectionDAG &DAG) const;
 
 	//- must be exist even without function all
     SDValue

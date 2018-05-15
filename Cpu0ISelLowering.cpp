@@ -115,6 +115,10 @@ Cpu0TargetLowering::Cpu0TargetLowering(const Cpu0TargetMachine &TM,
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::i32 , Expand);
   setOperationAction(ISD::SIGN_EXTEND_INREG, MVT::Other , Expand);
 
+  setOperationAction(ISD::VASTART,            MVT::Other, Custom);
+  setOperationAction(ISD::VAARG,             MVT::Other, Expand);
+  setOperationAction(ISD::VACOPY,            MVT::Other, Expand);
+  setOperationAction(ISD::VAEND,             MVT::Other, Expand);
 
 //- Set .align 2
 // It will emit .align 2 later
@@ -143,6 +147,7 @@ LowerOperation(SDValue Op, SelectionDAG &DAG) const
   case ISD::GlobalAddress:      return lowerGlobalAddress(Op, DAG);
   case ISD::BlockAddress:       return lowerBlockAddress(Op, DAG);
   case ISD::JumpTable:          return lowerJumpTable(Op, DAG);
+  case ISD::VASTART:            return lowerVASTART(Op, DAG);
   }
   return SDValue();
 }
@@ -778,6 +783,9 @@ Cpu0TargetLowering::LowerFormalArguments(SDValue Chain,
   }
 //@Ordinary struct type: 1 }
 
+  if (IsVarArg)
+    writeVarArgRegs(OutChains, Cpu0CCInfo, Chain, DL, DAG);
+
   // All stores are grouped in one node to allow the matching between
   // the size of Ins and InVals. This only happens when on varg functions
   if (!OutChains.empty()) {
@@ -907,6 +915,7 @@ analyzeCallOperands(const SmallVectorImpl<ISD::OutputArg> &Args,
 
   unsigned NumOpnds = Args.size();
   llvm::CCAssignFn *FixedFn = fixedArgFn();
+  llvm::CCAssignFn *VarFn = varArgFn();
 
   //@3 {
   for (unsigned I = 0; I != NumOpnds; ++I) {
@@ -920,6 +929,9 @@ analyzeCallOperands(const SmallVectorImpl<ISD::OutputArg> &Args,
       continue;
     }
 
+    if (IsVarArg && !Args[I].IsFixed)
+      R = VarFn(I, ArgVT, ArgVT, CCValAssign::Full, ArgFlags, CCInfo);
+    else
     {
       MVT RegVT = getRegVT(ArgVT, FuncArgs[Args[I].OrigArgIndex].Ty, CallNode,
                            IsSoftFloat);
@@ -1218,5 +1230,71 @@ passByValArg(SDValue Chain, const SDLoc &DL,
                         /*isTailCall=*/false,
                         MachinePointerInfo(), MachinePointerInfo());
   MemOpChains.push_back(Chain);
+}
+
+llvm::CCAssignFn *Cpu0TargetLowering::Cpu0CC::varArgFn() const {
+  if (IsO32)
+    return CC_Cpu0O32;
+  else // IsS32
+    return CC_Cpu0S32;
+}
+
+SDValue Cpu0TargetLowering::lowerVASTART(SDValue Op, SelectionDAG &DAG) const {
+  MachineFunction &MF = DAG.getMachineFunction();
+  Cpu0FunctionInfo *FuncInfo = MF.getInfo<Cpu0FunctionInfo>();
+
+  SDLoc DL = SDLoc(Op);
+  SDValue FI = DAG.getFrameIndex(FuncInfo->getVarArgsFrameIndex(),
+                                 getPointerTy(MF.getDataLayout()));
+
+  // vastart just stores the address of the VarArgsFrameIndex slot into the
+  // memory location argument.
+  const Value *SV = cast<SrcValueSDNode>(Op.getOperand(2))->getValue();
+  return DAG.getStore(Op.getOperand(0), DL, FI, Op.getOperand(1),
+                      MachinePointerInfo(SV));
+}
+
+void Cpu0TargetLowering::writeVarArgRegs(std::vector<SDValue> &OutChains,
+                                         const Cpu0CC &CC, SDValue Chain,
+                                         const SDLoc &DL, SelectionDAG &DAG) const {
+  unsigned NumRegs = CC.numIntArgRegs();
+  const ArrayRef<MCPhysReg> ArgRegs = CC.intArgRegs();
+  const CCState &CCInfo = CC.getCCInfo();
+  unsigned Idx = CCInfo.getFirstUnallocated(ArgRegs);
+  unsigned RegSize = CC.regSize();
+  MVT RegTy = MVT::getIntegerVT(RegSize * 8);
+  const TargetRegisterClass *RC = getRegClassFor(RegTy);
+  MachineFunction &MF = DAG.getMachineFunction();
+  MachineFrameInfo *MFI = MF.getFrameInfo();
+  Cpu0FunctionInfo *Cpu0FI = MF.getInfo<Cpu0FunctionInfo>();
+
+  // Offset of the first variable argument from stack pointer.
+  int VaArgOffset;
+
+  if (NumRegs == Idx)
+    VaArgOffset = alignTo(CCInfo.getNextStackOffset(), RegSize);
+  else
+    VaArgOffset = (int)CC.reservedArgArea() - (int)(RegSize * (NumRegs - Idx));
+
+  // Record the frame index of the first variable argument
+  // which is a value necessary to VASTART.
+  int FI = MFI->CreateFixedObject(RegSize, VaArgOffset, true);
+  Cpu0FI->setVarArgsFrameIndex(FI);
+
+  // Copy the integer registers that have not been used for argument passing
+  // to the argument register save area. For O32, the save area is allocated
+  // in the caller's stack frame, while for N32/64, it is allocated in the
+  // callee's stack frame.
+  for (unsigned I = Idx; I < NumRegs; ++I, VaArgOffset += RegSize) {
+    unsigned Reg = addLiveIn(MF, ArgRegs[I], RC);
+    SDValue ArgValue = DAG.getCopyFromReg(Chain, DL, Reg, RegTy);
+    FI = MFI->CreateFixedObject(RegSize, VaArgOffset, true);
+    SDValue PtrOff = DAG.getFrameIndex(FI, getPointerTy(DAG.getDataLayout()));
+    SDValue Store = DAG.getStore(Chain, DL, ArgValue, PtrOff,
+                                 MachinePointerInfo());
+    cast<StoreSDNode>(Store.getNode())->getMemOperand()->setValue(
+        (Value *)nullptr);
+    OutChains.push_back(Store);
+  }
 }
 
