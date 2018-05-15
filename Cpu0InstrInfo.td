@@ -251,7 +251,10 @@ class RetBase<RegisterClass RC>: JumpFR<0x14, "ret", RC>
 
 class JumpLink<bits<6> op, string instr_asm>:
   FJ<op, (outs), (ins calltarget:$target, variable_ops),
-     !strconcat(instr_asm, "\t$target"), [(Cpu0JmpLink imm:$target)]>;
+     !strconcat(instr_asm, "\t$target"), [(Cpu0JmpLink imm:$target)]>
+{
+  let isCall = 1;
+}
 
 class JumpLinkReg<bits<6> op, string instr_asm,
                   RegisterClass RC>:

@@ -33,7 +33,7 @@ class Cpu0FunctionInfo : public MachineFunctionInfo {
 public:
   Cpu0FunctionInfo(MachineFunction& MF)
   : MF(MF), 
-    SRetReturnReg(0), CallsEhReturn(false), CallsEhDwarf(false),
+    SRetReturnReg(0), CallsEhReturn(false),
     GlobalBaseReg(0),
     VarArgsFrameIndex(0), 
     InArgFIRange(std::make_pair(-1, 0)),
@@ -79,9 +79,6 @@ public:
   bool callsEhReturn() const { return CallsEhReturn; }
   void setCallsEhReturn() { CallsEhReturn = true; }
 
-  bool callsEhDwarf() const { return CallsEhDwarf; }
-  void setCallsEhDwarf() { CallsEhDwarf = true; }
-
   void createEhDataRegsFI();
   int getEhDataRegFI(unsigned Reg) const { return EhDataRegFI[Reg]; }
 
@@ -124,9 +121,6 @@ private:
 
   /// CallsEhReturn - Whether the function calls llvm.eh.return.
   bool CallsEhReturn;
-
-  /// CallsEhDwarf - Whether the function calls llvm.eh.dwarf.
-  bool CallsEhDwarf;
 
   /// Frame objects for spilling eh data registers.
   int EhDataRegFI[2];
