@@ -25,6 +25,15 @@
 #define MAX_LEVEL_1_PAGE_TABLE_MAPPINGS 4194304
 #define MAX_LEVEL_2_PAGE_TABLE_MAPPINGS 2048
 
+#define PID_INIT 0
+#define PID_USER_PROC_1 1
+#define PID_CLOCK_COUNTER 2
+#define PID_UART1_OUT_READY_NOTIFIER 3
+#define PID_UART1_OUT_SERVER 4
+#define PID_UART1_IN_READY_NOTIFIER 5
+#define PID_UART1_IN_SERVER 6
+#define PID_COMMAND_SERVER 7
+
 /*
  * PCB:
  *  PCB->priority is divided into 4 classes, from 0(highest) to >3(lowest).

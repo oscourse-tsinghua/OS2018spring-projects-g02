@@ -24,7 +24,7 @@ int putchar(int c){
 	struct kernel_message putchar_reply;
 	putchar_m.message_type = OUTPUT_CHARACTER;
 	putchar_m.data = c;
-	send_message(&putchar_m, 6, &putchar_reply);
+	send_message(&putchar_m, PID_UART1_OUT_SERVER, &putchar_reply);
 	switch(putchar_reply.message_type){
 		case MESSAGE_ACKNOWLEDGED:{
 			break;

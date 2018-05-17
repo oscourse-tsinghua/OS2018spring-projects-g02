@@ -32,7 +32,7 @@
 int do_compile(void);
 void user_proc_1(void);
 void user_proc_2(void);
-void clock_tick_notifier(void);
+void clock_tick_counter(void);
 void clock_server(void);
 void uart1_out_ready_notifier(void);
 void uart1_out_server(void);

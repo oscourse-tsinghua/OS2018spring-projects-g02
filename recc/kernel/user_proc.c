@@ -16,61 +16,35 @@
 #include "user_proc.h"
 
 void user_proc_1(void){
+  unsigned entry = 1;
 	while(1){
-		printf("You're currently running a very simple microkernel that was built\n");
-		printf("for the purposes of demonstrating the 'One Page CPU' design, and\n");
-		printf("cross compiler collection.  This microkernel implements inter-process\n");
-		printf("communication, premptive context switching, interrupt based I/O, along\n");
-		printf("with a very simple timer that counts simulated clock ticks.\n");
-		printf("\nSome single-character commands include:\n\n");
-		printf("t -  Prints the number of simulated clock ticks since kernel start.\n");
-		printf("s -  Prints the stack pointer values of each task.\n");
-		printf("p -  Prints the priority of each task.\n");
-		printf("q -  Quit.\n");
-		task_exit();
+		if (entry == 1) {
+      printf("You're currently running a very simple microkernel that was built\n");
+      printf("for the purposes of demonstrating the 'One Page CPU' design, and\n");
+      printf("cross compiler collection.  This microkernel implements inter-process\n");
+      printf("communication, premptive context switching, interrupt based I/O, along\n");
+      printf("with a very simple timer that counts simulated clock ticks.\n");
+      printf("\nSome single-character commands include:\n\n");
+      printf("t -  Prints the number of simulated clock ticks since kernel start.\n");
+      printf("s -  Prints the stack pointer values of each task.\n");
+      printf("p -  Prints the priority of each task.\n");
+      printf("q -  Quit.\n");
+    }
+    entry = 0;
 	}
 }
 
-void user_proc_2(void){
-	while (1) {}
-}
+unsigned int num_ticks = 0;
 
-void clock_tick_notifier(void){
+void clock_tick_counter(void){
 	struct kernel_message clock_server_message;
 	struct kernel_message clock_server_reply;
 	clock_server_message.message_type = CLOCK_TICK_NOTIFY;
 	clock_server_message.data = 1;
 	while(1){
 		block_on_event(CLOCK_TICK_EVENT);
-		send_message(&clock_server_message, 4, &clock_server_reply);
-		switch(clock_server_reply.message_type){
-			case MESSAGE_ACKNOWLEDGED:{
-				break;
-			}default:{
-				assert(0 && "Unknown message type.\n");
-			}
-		}
-	}
-}
-
-unsigned int num_ticks = 0;
-
-void clock_server(void){
-	struct kernel_message message_to_reply;
-	struct kernel_message received_message;
-	message_to_reply.message_type = MESSAGE_ACKNOWLEDGED;
-	while(1){
-		receive_message(&received_message);
-		switch(received_message.message_type){
-			case CLOCK_TICK_NOTIFY:{
-				num_ticks++;
-				break;
-			}default:{
-				assert(0 && "Unknown message type.\n");
-			}
-		}
-		reply_message(&message_to_reply, received_message.source_id);
-	}
+    num_ticks++;
+  }
 }
 
 void uart1_out_ready_notifier(void){
@@ -80,7 +54,7 @@ void uart1_out_ready_notifier(void){
 	output_server_message.data = 1;
 	while(1){
 		block_on_event(UART1_OUT_READY);
-		send_message(&output_server_message, 6, &output_server_reply);
+		send_message(&output_server_message, PID_UART1_OUT_SERVER, &output_server_reply);
 		switch(output_server_reply.message_type){
 			case MESSAGE_ACKNOWLEDGED:{
 				break;
@@ -136,7 +110,7 @@ void uart1_in_ready_notifier(void){
 	input_server_message.data = 1;
 	while(1){
 		block_on_event(UART1_IN_READY);
-		send_message(&input_server_message, 8, &input_server_reply);
+		send_message(&input_server_message, PID_UART1_IN_SERVER, &input_server_reply);
 		switch(input_server_reply.message_type){
 			case MESSAGE_ACKNOWLEDGED:{
 				break;
@@ -160,7 +134,7 @@ void uart1_in_server(void){
 			case UART1_IN_READY_NOTIFY:{
 				output_server_message.data = getchar_nobusy();
 				/*  Send the character to output */
-				send_message(&output_server_message, 6, &output_server_reply);
+				send_message(&output_server_message, PID_UART1_OUT_SERVER, &output_server_reply);
 				switch(output_server_reply.message_type){
 					case MESSAGE_ACKNOWLEDGED:{
 						break;
@@ -169,7 +143,7 @@ void uart1_in_server(void){
 					}
 				}
 				/*  Let the command server know what is being typed */
-				send_message(&output_server_message, 9, &output_server_reply);
+				send_message(&output_server_message, PID_COMMAND_SERVER, &output_server_reply);
 				switch(output_server_reply.message_type){
 					case MESSAGE_ACKNOWLEDGED:{
 						break;
@@ -201,14 +175,14 @@ void command_server(void){
 					}case 115:{/* letter 's' */
 						unsigned int i;
 						printf("\n");
-						for(i = 0; i < 9; i++){
-							printf("Task %d SP: 0x%X\n", i, (unsigned int)pcbs[i].stack_pointer);
+						for(i = 0; i < MAX_NUM_PROCESSES; i++){
+							printf("Task %d SP: 0x%X\n", (unsigned)pcbs[i].pid, (unsigned int)pcbs[i].stack_pointer);
 						}
 						break;
 					}case 112:{/* letter 'p' */
 						unsigned int i;
 						printf("\n");
-						for(i = 0; i < 9; i++){
+						for(i = 0; i < MAX_NUM_PROCESSES; i++){
 							printf("Task %d Priority: %d\n", i, pcbs[i].priority);
 						}
 						break;

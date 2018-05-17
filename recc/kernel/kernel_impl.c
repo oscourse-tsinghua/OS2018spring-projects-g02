@@ -269,6 +269,20 @@ void page_fault_exception_interrupt_enable(void){
 	or_into_flags_register(PAGEING_ENABLE_BIT);
 }
 
+static void new_thread(unsigned int pid, unsigned int priority,
+    unsigned int* sp, void (*func)(void))
+{
+  /* pid 0 is the init process */
+  pcbs[pid].pid = pid;
+	pcbs[pid].priority = priority;
+	pcbs[pid].stack_pointer = sp;
+	if (pid != 0) {
+    init_task_stack(&(pcbs[pid].stack_pointer), func);
+    add_task_to_ready_queue(&pcbs[pid]);
+  }
+  message_queue_init(&pcbs[pid].messages, MAX_NUM_PROCESSES);
+}
+
 void k_kernel_init(void){
 	unsigned int i;
 
@@ -283,54 +297,30 @@ void k_kernel_init(void){
 	task_queue_init(&blocked_on_uart1_out_ready_queue, MAX_NUM_PROCESSES);
 	task_queue_init(&blocked_on_uart1_in_ready_queue, MAX_NUM_PROCESSES);
 
-	pcbs[0].state = ACTIVE; /*  Task 0 is not really a task, it is the 'int main' that we might want to return to later for graceful exit. */
+	pcbs[0].state = ACTIVE; 
+  /*  Task 0 is not really a task, it is the 'int main' that we might want to return to later for graceful exit. */
 
-	for(i = 0; i < MAX_NUM_PROCESSES; i++)
-		pcbs[i].pid = i;
-
-	pcbs[0].priority = 5;
-	pcbs[1].priority = 5;
-	pcbs[2].priority = 5;
-	pcbs[3].priority = 2;
-	pcbs[4].priority = 3;
-	pcbs[5].priority = 0;
-	pcbs[6].priority = 1;
-	pcbs[7].priority = 0;
-	pcbs[8].priority = 1;
-	pcbs[9].priority = 3;
-
-	pcbs[0].stack_pointer = g_current_sp; /*  Save SP from entering this method so we can exit kernel gracefully */
-	pcbs[1].stack_pointer = &user_proc_1_stack[STACK_SIZE -1];
-	pcbs[2].stack_pointer = &user_proc_2_stack[STACK_SIZE -1];
-	pcbs[3].stack_pointer = &user_proc_3_stack[STACK_SIZE -1];
-	pcbs[4].stack_pointer = &user_proc_4_stack[STACK_SIZE -1];
-	pcbs[5].stack_pointer = &user_proc_5_stack[STACK_SIZE -1];
-	pcbs[6].stack_pointer = &user_proc_6_stack[STACK_SIZE -1];
-	pcbs[7].stack_pointer = &user_proc_7_stack[STACK_SIZE -1];
-	pcbs[8].stack_pointer = &user_proc_8_stack[STACK_SIZE -1];
-	pcbs[9].stack_pointer = &user_proc_9_stack[STACK_SIZE -1];
-
-	for(i = 0; i < MAX_NUM_PROCESSES; i++)
-		message_queue_init(&pcbs[i].messages, MAX_NUM_PROCESSES);
-
-	for(i = 1; i < MAX_NUM_PROCESSES; i++)
-		add_task_to_ready_queue(&pcbs[i]);
-
-	/*  We need to set up our tasks so that the stack has the correct PC and FP value for the first time it is scheduled*/
-	init_task_stack(&(pcbs[1].stack_pointer), user_proc_1);
-	init_task_stack(&(pcbs[2].stack_pointer), user_proc_2);
-	init_task_stack(&(pcbs[3].stack_pointer), clock_tick_notifier);
-	init_task_stack(&(pcbs[4].stack_pointer), clock_server);
-	init_task_stack(&(pcbs[5].stack_pointer), uart1_out_ready_notifier);
-	init_task_stack(&(pcbs[6].stack_pointer), uart1_out_server);
-	init_task_stack(&(pcbs[7].stack_pointer), uart1_in_ready_notifier);
-	init_task_stack(&(pcbs[8].stack_pointer), uart1_in_server);
-	init_task_stack(&(pcbs[9].stack_pointer), command_server);
+  new_thread(PID_INIT,
+      5, g_current_sp, (void (*)(void)) 0);
+  new_thread(PID_USER_PROC_1,
+      5, &user_proc_1_stack[STACK_SIZE-1], user_proc_1);
+  new_thread(PID_CLOCK_COUNTER,
+      2, &user_proc_3_stack[STACK_SIZE-1], clock_tick_counter);
+  new_thread(PID_UART1_OUT_READY_NOTIFIER, 
+      0, &user_proc_5_stack[STACK_SIZE-1], uart1_out_ready_notifier);
+  new_thread(PID_UART1_OUT_SERVER,
+      1, &user_proc_6_stack[STACK_SIZE-1], uart1_out_server);
+  new_thread(PID_UART1_IN_READY_NOTIFIER,
+      0, &user_proc_7_stack[STACK_SIZE-1], uart1_in_ready_notifier);
+  new_thread(PID_UART1_IN_SERVER,
+      1, &user_proc_8_stack[STACK_SIZE-1], uart1_in_server);
+  new_thread(PID_COMMAND_SERVER,
+      3, &user_proc_9_stack[STACK_SIZE-1], command_server);
 
 	set_timer_period(current_timer_period);
 	timer_interrupt_enable();
 	uart1_out_interrupt_enable();
 	uart1_in_interrupt_enable();
-    printf_busy("Kernel load success!\n");
+  printf_busy("Kernel load success!\n");
 	schedule_next_task();
 }
