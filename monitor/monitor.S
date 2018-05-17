@@ -20,23 +20,28 @@ START:
     #save interrupt entrance
 
     lui $SP 0x8000
-    addiu $t1 $ZR 0x5a
+    addiu $t1 $ZR 0xaa
     or $FR $FR $t1
     #interrupt open
 
     addiu $t8 $ZR helloString
     addiu $ra $pc 0x8
     beq $ZR $ZR DoWrite
+    #write hello string
+
 
 loop:
     addiu $ZR $ZR 0x0
     addiu $ZR $ZR 0x0
+    beq $a1 $ZR halt
     beq $ZR $ZR loop
 
+halt:
+    addiu $FR $FR 0x1
 
 ReadSerial:
 ## only 1 charactor, save in v0
-    lui $t0 0x3
+    lui $t0 0x30
     loa $v0 0x10($t0)
     # get v0
 
@@ -44,7 +49,7 @@ ReadSerial:
     # add count
 
     addiu $t1 $ZR 0x500
-    xor $t1 $t1 $ZR
+    xor $t1 $t1 $t9
     and $FR $FR $t1
     # clear bit 8 and bit 10 in FR
 
@@ -52,12 +57,12 @@ ReadSerial:
 
 WriteSerial:
 ## only 1 charactor, save in v1
-    lui $t0 0x3
+    lui $t0 0x30
     sto $v1 0x0($t0)
     # save v1
 
     addiu $t1 $ZR 0x240
-    xor $t1 $t1 $ZR
+    xor $t1 $t1 $t9
     and $FR $FR $t1
     # clear bit 6 and bit 9 in FR
 
@@ -82,7 +87,7 @@ WriteFinish:
 
 DoWrite:
 ## try to write a string to serial
-    beq $a1 $ZR DoWriteReturn
+    #beq $a1 $ZR DoWriteReturn
     addiu $a1 $t8 0x0
     # save the position of string waiting to write
 
