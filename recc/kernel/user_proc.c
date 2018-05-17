@@ -32,14 +32,6 @@ void user_proc_1(void){
 }
 
 void user_proc_2(void){
-	/*
-	struct kernel_message m;
-        m.message_type = OUTPUT_CHARACTER;
-        m.data = 'M';
-	while(1){
-        	release_processor();
-	}
-	*/
 	while (1) {}
 }
 
