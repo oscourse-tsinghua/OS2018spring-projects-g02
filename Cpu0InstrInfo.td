@@ -96,12 +96,18 @@ def uimm16      : Operand<i32>
   let PrintMethod = "printUnsignedImm";
 }
 
+def Cpu0MemAsmOperand : AsmOperandClass {
+  let Name = "Mem";
+  let ParserMethod = "parseMemOperand";
+}
+
 // Address operand
 def mem : Operand<iPTR> 
 {
   let PrintMethod = "printMemOperand";
   let MIOperandInfo = (ops CPURegs, simm16);
   let EncoderMethod = "getMemEncoding";
+  let ParserMatchClass = Cpu0MemAsmOperand;
 }
 
 def mem_ea : Operand<iPTR> 
@@ -306,6 +312,21 @@ let isReturn=1, isTerminator=1, hasDelaySlot=0, isBarrier=1, hasCtrlDep=1 in
   def RetLR : Cpu0Instr_Pseudo<(outs), (ins), "", [(Cpu0Ret)]>;
 
 
+class LoadImm32< string instr_asm, Operand Od, RegisterClass RC> :
+  Cpu0AsmPseudoInst<(outs RC:$ra), (ins Od:$imm32),
+                     !strconcat(instr_asm, "\t$ra, $imm32")> ;
+def LoadImm32Reg : LoadImm32<"li", Operand<i32>, CPURegs>;
+
+class LoadAddress<string instr_asm, Operand MemOpnd, RegisterClass RC> :
+  Cpu0AsmPseudoInst<(outs RC:$ra), (ins MemOpnd:$addr),
+                     !strconcat(instr_asm, "\t$ra, $addr")> ;
+def LoadAddr32Reg : LoadAddress<"la", mem, CPURegs>;
+
+class LoadAddressImm<string instr_asm, Operand Od, RegisterClass RC> :
+  Cpu0AsmPseudoInst<(outs RC:$ra), (ins Od:$imm32),
+                     !strconcat(instr_asm, "\t$ra, $imm32")> ;
+def LoadAddr32Imm : LoadAddressImm<"la", Operand<i32>, CPURegs>;
+
 // ****************************************************************************
 // Instruction definition
 
@@ -323,7 +344,7 @@ def SHRV  : ArithLogicInstr_RRR < 0x9 , "shr"  , srl          , CPURegs>;
 def SHLV  : ArithLogicInstr_RRR < 0xa , "shl"  , shl          , CPURegs>;
 def BEQ   : CBranch16           < 0xb , "beq"  , seteq        , GPROut>;
 def BLT   : CBranch16           < 0xc , "blt"  , setult       , GPROut>;
-def ADDiu : ArithLogic_RRI      < 0xd , "addi" , add          , simm16  , immSExt16 , CPURegs>;  // replaces ll
+def ADDiu : ArithLogic_RRI      < 0xd , "addiu" , add          , simm16  , immSExt16 , CPURegs>;  // replaces ll
 
 // extensions
 def LUi     : LoadUpper<0xe, "lui", GPROut, uimm16>;

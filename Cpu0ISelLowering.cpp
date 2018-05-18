@@ -1285,6 +1285,9 @@ void Cpu0TargetLowering::writeVarArgRegs(std::vector<SDValue> &OutChains,
   // to the argument register save area. For O32, the save area is allocated
   // in the caller's stack frame, while for N32/64, it is allocated in the
   // callee's stack frame.
+  //
+  // Save them to stack so vararg can load them from stacks
+  //
   for (unsigned I = Idx; I < NumRegs; ++I, VaArgOffset += RegSize) {
     unsigned Reg = addLiveIn(MF, ArgRegs[I], RC);
     SDValue ArgValue = DAG.getCopyFromReg(Chain, DL, Reg, RegTy);

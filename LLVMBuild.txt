@@ -19,6 +19,7 @@
 
 [common]
 subdirectories = 
+  AsmParser 
   InstPrinter 
   MCTargetDesc TargetInfo
 
@@ -33,6 +34,7 @@ name = Cpu0
 parent = Target
 # Whether this target defines an assembly parser, assembly printer, disassembler
 #  , and supports JIT compilation. They are optional.
+has_asmparser = 1
 has_asmprinter = 1
 
 [component_1]

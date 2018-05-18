@@ -1,3 +1,5 @@
+set(LLVM_TARGET_DEFINITIONS Cpu0Asm.td)
+tablegen(LLVM Cpu0GenAsmMatcher.inc -gen-asm-matcher)
 
 set(LLVM_TARGET_DEFINITIONS Cpu0Other.td)
 
@@ -44,4 +46,5 @@ add_llvm_target(Cpu0CodeGen
 add_subdirectory(InstPrinter)
 add_subdirectory(TargetInfo)
 add_subdirectory(MCTargetDesc)
+add_subdirectory(AsmParser)
 

@@ -17,6 +17,16 @@ def Cpu0InstrInfo : InstrInfo;
 class Proc<string Name, list<SubtargetFeature> Features>
  : Processor<Name, NoItineraries, Features>;
 def : Proc<"cpu032I", []>;
+def Cpu0AsmParser : AsmParser {
+  let ShouldEmitMatchRegisterName = 0;
+}
+
+def Cpu0AsmParserVariant : AsmParserVariant {
+  int Variant = 0;
+
+  // Recognize hard coded registers.
+  string RegisterPrefix = "$";
+}
 
 // Will generate Cpu0GenAsmWrite.inc included by Cpu0InstPrinter.cpp, contents 
 //  as follows,
@@ -24,5 +34,7 @@ def : Proc<"cpu032I", []>;
 // const char *Cpu0InstPrinter::getRegisterName(unsigned RegNo) {...}
 def Cpu0 : Target {
   let InstructionSet = Cpu0InstrInfo;
+  let AssemblyParsers = [Cpu0AsmParser];
+  let AssemblyParserVariants = [Cpu0AsmParserVariant];
 }
 
