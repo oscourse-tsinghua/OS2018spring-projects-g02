@@ -141,11 +141,10 @@ loa r3 r3;
 sto SP r3;       Store the return address.
 sub SP SP WR;    Push another 4 bytes for the frame pointer.
 sto SP ZR;       Save zero for kernel frame pointer
-add r1 FP ZR;    Copy FP of user task to copy fcn arguments onto kernel call
 beq ZR ZR 5;     Jump to test condition to copy function arguments.  Note:  arguments must be 4-byte objects
-sub r1 r1 WR;    Next word
+sub FP FP WR;    Next word
 sub SP SP WR;    Next word
-loa r2 r1;       Copy the value
+loa r2 FP;       Copy the value
 sto SP r2;       Store the value
 sub r6 r6 WR;    Decrement for count of arguments copied
 beq r6 ZR 1;

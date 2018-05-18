@@ -24,12 +24,12 @@ void task_queue_init(struct task_queue * queue, unsigned int size) {
 }
 
 void task_queue_push_end(struct task_queue * queue, void * item) {
-	if ((queue->end + 1) % queue->size == queue->start) {
+	if (((queue->end + 1) & 7) == queue->start) {
 		assert(0 && "Task queue is full.\n");
 	}
 	
 	queue->items[queue->end] = item;
-	queue->end = (queue->end + 1) % queue->size;
+	queue->end = ((queue->end + 1) & 7);
 	queue->current_count += 1;
 }
 
@@ -42,7 +42,7 @@ void * task_queue_pop_start(struct task_queue * queue) {
 
 	item = queue->items[queue->start];
 
-	queue->start = (queue->start + 1) % queue->size;
+	queue->start = ((queue->start + 1) & 7);
 	queue->current_count -= 1;
 	return item;
 }
@@ -59,12 +59,12 @@ void message_queue_init(struct message_queue * queue, unsigned int size){
 }
 
 void message_queue_push_end(struct message_queue * queue, struct kernel_message item){
-	if ((queue->end + 1) % queue->size == queue->start) {
+	if (((queue->end + 1) & 7) == queue->start) {
 		assert(0 && "Message queue is full.\n");
 	}
 	
 	queue->items[queue->end] = item;
-	queue->end = (queue->end + 1) % queue->size;
+	queue->end = ((queue->end + 1) & 7);
 	queue->current_count += 1;
 }
 
@@ -77,7 +77,7 @@ struct kernel_message message_queue_pop_start(struct message_queue * queue){
 
 	item = queue->items[queue->start];
 
-	queue->start = (queue->start + 1) % queue->size;
+	queue->start = ((queue->start + 1) & 7);
 	queue->current_count -= 1;
 	return item;
 }
