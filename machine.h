@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include "common.h"
+
+// EM_CPU0 == 999
+#define EM_CPU0 0x3e7
 
 
 /******************************************************************************/
@@ -31,6 +35,8 @@ typedef uint32_t reg_t[NUM_REGS];
 #define FRBIT_UART1_OUTRDY (1u << 9u)
 #define FRBIT_UART1_INRDY (1u << 10u)
 
+#define UART1_OUT 0x300000
+#define UART1_IN 0x300010
 #define IRQ_HANDLER 0x300020
 #define TIMER_PERIOD 0x300030
 
@@ -50,7 +56,7 @@ typedef struct mm_t {
   vma_t* vma;
 } mm_t;
 
-#define MEM_UART_OUT 0x300000
+#define MEM_UART_OUT_DIRECT 0x300090
 
 #define E_MEM_SEGFAULT 1
 #define E_MEM_PERM 2
@@ -71,5 +77,13 @@ int mem_read(machine_t* m, uint32_t addr, uint32_t* rv);
 int mem_exec(machine_t* m, uint32_t addr,
     void (*cpuexec)(machine_t* m, uint32_t inst));
 
+vma_t* add_vma(machine_t* m, uint32_t beg, uint32_t end, uint32_t perm);
+
+
+/******************************************************************************/
+// machine specific
+void check_excep(machine_t* m);
+void exec_inst(machine_t* m, uint32_t inst);
+void machine_init(machine_t* m);
 
 #endif // MACHINE_H

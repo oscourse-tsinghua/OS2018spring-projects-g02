@@ -5,7 +5,7 @@
 #define STACK_POS 0xF0000000
 
 #define MAPPED_POS 0x300000
-#define MAPPED_SIZE 0x60
+#define MAPPED_SIZE 0x100
 
 #define PERM_CHECK
 

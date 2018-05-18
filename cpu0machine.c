@@ -97,6 +97,31 @@ int instr_type(uint32_t opcode)
   }
 }
 
+void dump_fr(machine_t* m)
+{
+  unsigned r = m->regs[REG_FR];
+  if (r & FRBIT_GIE)
+    printf("GIE ");
+  if (r & FRBIT_ERET)
+    printf("ERET ");
+  if (r & FRBIT_CLKEN)
+    printf("CLKEN ");
+  if (r & FRBIT_CLK)
+    printf("CLK ");
+  if (r & FRBIT_UART1_OUTEN)
+    printf("OUTEN ");
+  if (r & FRBIT_UART1_OUT)
+    printf("OUT ");
+  if (r & FRBIT_UART1_INEN)
+    printf("INEN ");
+  if (r & FRBIT_UART1_IN)
+    printf("IN ");
+  if (r & FRBIT_UART1_OUTRDY)
+    printf("OUTRDY ");
+  if (r & FRBIT_UART1_INRDY)
+    printf("INRDY ");
+}
+
 #endif
 
 
@@ -113,19 +138,20 @@ void exec_inst(machine_t* m, uint32_t inst)
   uint32_t imm26sext = decode_imm26sext(inst);
 
 #ifdef INSTR_WATCH
-  printf(">> %d\n", m->cycno);
   switch (instr_type(opcode)) {
     case INSTR_TYPE_R:
-      printf("* [%08X]{%08X} [%s] opcode=%d, rx=%d, ry=%d, rz=%d\n",
-          m->regs[REG_PC], inst, instrname[opcode], opcode, rx, ry, rz);
+      printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, rx=%d, ry=%d, rz=%d\n",
+          m->regs[REG_PC], inst, m->cycno, instrname[opcode], opcode, rx, ry, rz);
       break;
     case INSTR_TYPE_I:
-      printf("* [%08X]{%08X} [%s] opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
-          m->regs[REG_PC], inst, instrname[opcode], opcode, rx, ry, immsext, imm);
+      if (opcode == OPCODE_BEQ && rx == REG_ZR && ry == REG_ZR && immsext == -4)
+        break; // don't print spin instructions
+      printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
+          m->regs[REG_PC], inst, m->cycno, instrname[opcode], opcode, rx, ry, immsext, imm);
       break;
     case INSTR_TYPE_J:
-      printf("* [%08X]{%08X} [%s] opcode=%d, imm=%d (hex=%08X)\n",
-          m->regs[REG_PC], inst, instrname[opcode], opcode, imm26sext, imm26sext);
+      printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, imm=%d (hex=%08X)\n",
+          m->regs[REG_PC], inst, m->cycno, instrname[opcode], opcode, imm26sext, imm26sext);
       break;
     default:
       assert(0 && "bad instr type");
@@ -271,3 +297,18 @@ void check_excep(machine_t* m)
   m->regs[REG_FR] &= ~FRBIT_GIE;  // disable interrupts
   assert(mem_read(m, IRQ_HANDLER, &(m->regs[REG_PC])) == 0); // goto irq_handler
 }
+
+
+vma_t* add_vma(machine_t* m, uint32_t beg, uint32_t end, uint32_t perm)
+{
+  vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
+  vma->begin = beg;
+  vma->end = end;
+  assert(vma->end > vma->begin);
+  vma->perm = perm;
+  vma->next = m->mm.vma;
+  m->mm.vma = vma;
+  vma->data = calloc(end - beg, 1); // 1 MB of stack space
+  return vma;
+}
+

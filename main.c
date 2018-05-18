@@ -2,100 +2,85 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
 
 #include "common.h"
 #include "machine.h"
+#include "loader.h"
+#include "uart.h"
 
-// EM_CPU0 == 999
-#define EM_CPU0 0x3e7
 
-// object image cannot be greater than 8MB
-#define MAX_IMG_SZ 8*1024*1024 
+struct termios * terminal_setup(void){
+  struct termios * original = (struct termios *)malloc(sizeof(struct termios));
+  struct termios stdio;
+  tcgetattr(STDOUT_FILENO, original);
 
-vma_t* add_vma(machine_t* m, uint32_t beg, uint32_t end, uint32_t perm)
-{
-  vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
-  vma->begin = beg;
-  vma->end = end;
-  assert(vma->end > vma->begin);
-  vma->perm = perm;
-  vma->next = m->mm.vma;
-  m->mm.vma = vma;
-  vma->data = calloc(end - beg, 1); // 1 MB of stack space
-  return vma;
-}
-
-void load_elf(const char* filename, machine_t* rv)
-{
-  // load object into memory
-  FILE* fin = fopen(filename, "r");
-  assert(fin);
-  static uint8_t img[MAX_IMG_SZ];
-  assert(fread(img, 1, MAX_IMG_SZ, fin) < MAX_IMG_SZ && "object too big!");
-
-  rv->mm.vma = NULL;
-
-  Elf32_Ehdr* eheader = (Elf32_Ehdr*) img;
-
-  // check magic
-  assert(eheader->e_ident[0] == ELFMAG0 && "bad magic");
-  assert(eheader->e_ident[1] == ELFMAG1 && "bad magic");
-  assert(eheader->e_ident[2] == ELFMAG2 && "bad magic");
-  assert(eheader->e_ident[3] == ELFMAG3 && "bad magic");
-
-  // check if is executable object
-  assert(eheader->e_type == ET_EXEC && "not executable type");
-
-  // check machine
-  assert(eheader->e_machine == EM_CPU0 && "object is not targeted on cpu0");
-
-  printf("e_flags=%08x\n", eheader->e_flags);
-
-  rv->regs[REG_PC] = eheader->e_entry;
-  printf("e_entry=%08x\n", eheader->e_entry);
-
-  assert(eheader->e_phentsize == sizeof(Elf32_Phdr));
-  for (int no_ph = 0; no_ph < eheader->e_phnum; no_ph++) {
-    Elf32_Phdr* pheader = (Elf32_Phdr*) (img +
-      eheader->e_phoff + no_ph * eheader->e_phentsize);
-    if (pheader->p_type != PT_LOAD) continue;
-
-    // initialize memory region
-    assert(pheader->p_memsz >= pheader->p_filesz); // ELF standard
-    // the beginning p_filesz bytes are loaded from file
-    // while the rest are filled with zero
-    vma_t* vma = add_vma(rv, pheader->p_vaddr,
-        pheader->p_vaddr + pheader->p_memsz,
-        pheader->p_flags & VMA_PERM_MASK);
-    memcpy(vma->data, img + pheader->p_offset, pheader->p_filesz);
-    printf("region %08X - %08x (%d): rwx=%d%d%d\n",
-        vma->begin, vma->end, pheader->p_memsz,
-        (vma->perm & PF_R) ? 1 : 0,
-        (vma->perm & PF_W) ? 1 : 0,
-        (vma->perm & PF_X) ? 1 : 0);
-  }
-
-  // XXX: dirty hack to initialize a read / writable stack
-  add_vma(rv, STACK_POS, STACK_POS + STACK_SIZE, PF_W | PF_R);
-  printf("stack %08X-%08X (%d)\n",
-      STACK_POS, STACK_POS + STACK_SIZE, STACK_SIZE);
-  add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
-  printf("mapped %08X-%08X (%d)\n",
-      MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
-  printf("\n\n");
+  memcpy(&stdio, original, sizeof(struct termios));
+  stdio.c_iflag = 0;
+  stdio.c_cflag = 0;
+  stdio.c_lflag = 0;
+  stdio.c_cc[VMIN] = 1;
+  stdio.c_cc[VTIME] = 0;
+  tcsetattr(STDOUT_FILENO, TCSANOW, &stdio);
+  tcsetattr(STDOUT_FILENO, TCSAFLUSH, &stdio);
+  fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+  return original;
 }
 
 
-extern void machine_init(machine_t* m);
-extern void exec_inst(machine_t* m, uint32_t inst);
-extern void check_excep(machine_t* m);
+#define MAX_USER_INBUF 1000
+char user_inbuf[MAX_USER_INBUF];
+int user_inbuf_beg;
+int user_inbuf_end;
+#define user_inbuf_adv(v) ((v) = (((v)+1) % MAX_USER_INBUF))
 
-void cpu_run(machine_t* m, unsigned num_cycles)
+void cpu_run(machine_t* m, unsigned n_cycles)
 {
-  while (num_cycles--) {
+	struct termios * original = terminal_setup();
+
+  user_inbuf_beg = 0;
+  user_inbuf_end = 0;
+
+  unsigned nonstop = 0;
+  if (n_cycles == 0)
+    nonstop = 1;
+
+  while (1) {
+    if (!nonstop && !n_cycles--)
+      break;
+    // check for machine output
+    unsigned req_rtn;
+    if (uart_request(m, &req_rtn) == 0) {
+      printf("> uart std out: %08X    (d=% 10d) (c=%c)\n",
+          req_rtn, req_rtn, req_rtn);
+      fflush(stdout);
+    }
+
+    // check for user input, and buffer it
+    char ch;
+    if (read(STDIN_FILENO, &ch, 1) > 0) {
+      if (ch == 3) break; // Ctrl-C
+      user_inbuf[user_inbuf_end] = ch;
+      user_inbuf_adv(user_inbuf_end);
+    }
+
+    // if any input
+    if (user_inbuf_beg != user_inbuf_end) {
+      if (uart_feed(m, user_inbuf[user_inbuf_beg]) == 0)
+        user_inbuf_adv(user_inbuf_beg);
+    }
+
+    // actually execute
     check_excep(m);
     mem_exec(m, m->regs[REG_PC], exec_inst);
   }
+
+  tcsetattr(STDOUT_FILENO, TCSANOW, original);
+  tcsetattr(STDOUT_FILENO, TCSAFLUSH, original);
+
+  exit(0);
 }
 
 
@@ -110,15 +95,13 @@ machine_t machine;
 int main(int argc, char** argv)
 {
   if (argc != 3) {
-    printf("Usage: %s FILE CYCLES\n", argv[0]);
+    printf("Usage: %s FILE MAXCYCLES\n", argv[0]);
     printf("  FILE: executable object.\n");
-    printf("  CYCLES: number of execution cycles.\n");
+    printf("  MAXCYCLES: number of execution cycles. 0 means unlimited\n");
     return 0;
   }
 
   machine_init(&machine);  
-
   load_elf(argv[1], &machine);
-
   cpu_run(&machine, atoi(argv[2]));
 }
