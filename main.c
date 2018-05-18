@@ -12,6 +12,19 @@
 // object image cannot be greater than 8MB
 #define MAX_IMG_SZ 8*1024*1024 
 
+vma_t* add_vma(machine_t* m, uint32_t beg, uint32_t end, uint32_t perm)
+{
+  vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
+  vma->begin = beg;
+  vma->end = end;
+  assert(vma->end > vma->begin);
+  vma->perm = perm;
+  vma->next = m->mm.vma;
+  m->mm.vma = vma;
+  vma->data = calloc(end - beg, 1); // 1 MB of stack space
+  return vma;
+}
+
 void load_elf(const char* filename, machine_t* rv)
 {
   // load object into memory
@@ -48,16 +61,12 @@ void load_elf(const char* filename, machine_t* rv)
     if (pheader->p_type != PT_LOAD) continue;
 
     // initialize memory region
-    vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
-    assert(pheader->p_memsz >= pheader->p_filesz);
+    assert(pheader->p_memsz >= pheader->p_filesz); // ELF standard
     // the beginning p_filesz bytes are loaded from file
     // while the rest are filled with zero
-    vma->begin = pheader->p_vaddr;
-    vma->end = pheader->p_vaddr + pheader->p_memsz;
-    vma->perm = pheader->p_flags & VMA_PERM_MASK;
-    vma->next = rv->mm.vma;
-    rv->mm.vma = vma;
-    vma->data = calloc(pheader->p_memsz, 1);
+    vma_t* vma = add_vma(rv, pheader->p_vaddr,
+        pheader->p_vaddr + pheader->p_memsz,
+        pheader->p_flags & VMA_PERM_MASK);
     memcpy(vma->data, img + pheader->p_offset, pheader->p_filesz);
     printf("region %08X - %08x (%d): rwx=%d%d%d\n",
         vma->begin, vma->end, pheader->p_memsz,
@@ -67,25 +76,24 @@ void load_elf(const char* filename, machine_t* rv)
   }
 
   // XXX: dirty hack to initialize a read / writable stack
-  vma_t* vma = (vma_t*) malloc(sizeof(vma_t));
-  vma->begin = STACK_POS; // 65536 bytes of kernel stack
-  vma->end = vma->begin + STACK_SIZE;   // don't cross zero
-  assert(vma->end > vma->begin);
-  vma->perm = PF_W | PF_R;
-  vma->next = rv->mm.vma;
-  rv->mm.vma = vma;
-  vma->data = calloc(STACK_SIZE, 1); // 1 MB of stack space
+  add_vma(rv, STACK_POS, STACK_POS + STACK_SIZE, PF_W | PF_R);
   printf("stack %08X-%08X (%d)\n",
-      vma->begin, vma->end, STACK_SIZE);
+      STACK_POS, STACK_POS + STACK_SIZE, STACK_SIZE);
+  add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
+  printf("mapped %08X-%08X (%d)\n",
+      MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
+  printf("\n\n");
 }
 
 
 extern void machine_init(machine_t* m);
 extern void exec_inst(machine_t* m, uint32_t inst);
+extern void check_excep(machine_t* m);
 
-void cpu_execute(machine_t* m, unsigned num_cycles)
+void cpu_run(machine_t* m, unsigned num_cycles)
 {
   while (num_cycles--) {
+    check_excep(m);
     mem_exec(m, m->regs[REG_PC], exec_inst);
   }
 }
@@ -112,5 +120,5 @@ int main(int argc, char** argv)
 
   load_elf(argv[1], &machine);
 
-  cpu_execute(&machine, atoi(argv[2]));
+  cpu_run(&machine, atoi(argv[2]));
 }

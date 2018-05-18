@@ -1,22 +1,22 @@
 #include "machine.h"
+#include "common.h"
 
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-
-#include "common.h"
 
 uint32_t excep = 0;
 
 void machine_init(machine_t* m)
 {
   memset(m, 0, sizeof(m));
-  m->regs[REG_SW] = 0x200; // TODO: SW
+  m->regs[REG_FR] = 0x200; // TODO: FR
   m->regs[REG_WR] = 4;
   m->regs[REG_ZR] = 0;
 
-  // dirty hack
   m->regs[REG_SP] = STACK_POS + STACK_SIZE - 4;
+
+  m->cycno = 0;
 }
 
 #define decode_opcode(i) (((i)>>26) & 0x3F)
@@ -63,6 +63,15 @@ static inline uint32_t decode_imm26sext(uint32_t i) {
 #define OPCODE_JALR 21
 #define OPCODE_JSUB 22
 
+char* instrname[] = {
+  "add", "sub", "mul", "div",
+  "and", "or",  "xor", "loa",
+  "sto", "shr", "shl", "beq",
+  "blt", "addiu", "lui", "BAD",
+  "ori", "lb", "sb", "bne",
+  "jr", "jalr", "jsub"
+};
+
 #ifdef INSTR_WATCH
 
 #define INSTR_TYPE_R 1
@@ -104,23 +113,23 @@ void exec_inst(machine_t* m, uint32_t inst)
   uint32_t imm26sext = decode_imm26sext(inst);
 
 #ifdef INSTR_WATCH
+  printf(">> %d\n", m->cycno);
   switch (instr_type(opcode)) {
     case INSTR_TYPE_R:
-      printf("* [%08X]{%08X} opcode=%d, rx=%d, ry=%d, rz=%d\n",
-          m->regs[REG_PC], inst, opcode, rx, ry, rz);
+      printf("* [%08X]{%08X} [%s] opcode=%d, rx=%d, ry=%d, rz=%d\n",
+          m->regs[REG_PC], inst, instrname[opcode], opcode, rx, ry, rz);
       break;
     case INSTR_TYPE_I:
-      printf("* [%08X]{%08X} opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
-          m->regs[REG_PC], inst, opcode, rx, ry, immsext, imm);
+      printf("* [%08X]{%08X} [%s] opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
+          m->regs[REG_PC], inst, instrname[opcode], opcode, rx, ry, immsext, imm);
       break;
     case INSTR_TYPE_J:
-      printf("* [%08X]{%08X} opcode=%d, imm=%d (hex=%08X)\n",
-          m->regs[REG_PC], inst, opcode, imm26sext, imm26sext);
+      printf("* [%08X]{%08X} [%s] opcode=%d, imm=%d (hex=%08X)\n",
+          m->regs[REG_PC], inst, instrname[opcode], opcode, imm26sext, imm26sext);
       break;
     default:
       assert(0 && "bad instr type");
   }
-
 #endif
 
   int err = 0;
@@ -194,7 +203,7 @@ void exec_inst(machine_t* m, uint32_t inst)
       break;
     case OPCODE_JALR:
       m->regs[REG_LR] = m->regs[REG_PC];
-      m->regs[REG_PC] = m->regs[rx];
+      m->regs[REG_PC] = m->regs[ry];
       break;
     case OPCODE_JSUB:
       m->regs[REG_LR] = m->regs[REG_PC];
@@ -204,5 +213,61 @@ void exec_inst(machine_t* m, uint32_t inst)
       assert(0 && "bad opcode!");
       break;
   }
+
+  m->cycno++;
+  unsigned timer_period = 0;
+  assert(mem_read(m, TIMER_PERIOD, &timer_period) == 0);
+  if (timer_period != 0 && m->cycno % timer_period == 0) {
+    m->regs[REG_FR] |= FRBIT_CLK;
+    m->cycno = 0;
+  }
 }
 
+
+void check_excep(machine_t* m)
+{
+  // check for ERET
+  if (m->regs[REG_FR] & FRBIT_ERET) {
+#ifdef EXCEP_WATCH
+    printf("@ [%08X] eret\n", m->regs[REG_PC]);
+#endif
+    m->regs[REG_FR] &= ~FRBIT_ERET;
+    m->regs[REG_FR] |= FRBIT_GIE; // enable interrupts
+    assert(mem_read(m, m->regs[REG_SP], &(m->regs[REG_PC])) == 0);
+    m->regs[REG_SP] += 4; // pop PC
+    return;
+  }
+
+  if (!(m->regs[REG_FR] & FRBIT_GIE))
+    return;
+
+  unsigned excep = 0;
+  unsigned regfr = m->regs[REG_FR];
+
+  if ((regfr & FRBIT_CLKEN) && (regfr & FRBIT_CLK)) {
+#ifdef EXCEP_WATCH
+    printf("@ [%08X] clk\n", m->regs[REG_PC]);
+#endif
+    excep = 1;
+  }
+  if ((regfr & FRBIT_UART1_OUTEN) && (regfr & FRBIT_UART1_OUT)) {
+#ifdef EXCEP_WATCH
+    printf("@ [%08X] uartout\n", m->regs[REG_PC]);
+#endif
+    excep = 1;
+  }
+  if ((regfr & FRBIT_UART1_INEN) && (regfr & FRBIT_UART1_IN)) {
+#ifdef EXCEP_WATCH
+    printf("@ [%08X] uartin\n", m->regs[REG_PC]);
+#endif
+    excep = 1;
+  }
+
+  if (!excep)
+    return;
+
+  m->regs[REG_SP] -= 4;
+  assert(mem_write(m, m->regs[REG_SP], m->regs[REG_PC]) == 0); // push PC
+  m->regs[REG_FR] &= ~FRBIT_GIE;  // disable interrupts
+  assert(mem_read(m, IRQ_HANDLER, &(m->regs[REG_PC])) == 0); // goto irq_handler
+}
