@@ -1,0 +1,24 @@
+#!/bin/sh
+
+CLANG=clang
+CLANG_FLAGS="-target mips-unknown-linux-gnu -O0 -emit-llvm -I../include -isystem../libc -nostdinc"
+
+# modify this to point to your llc. use absolute paths.
+LLC=/home/hob/Programs/llvm-src/llvm-3.9.0.src/build/bin-sw/llc
+LLC_FLAGS="-march=cpu0el -relocation-model=static"
+LLD=/home/hob/Programs/llvm-src/llvm-3.9.0.src/build/bin-sw/ld.lld
+LLAS=/home/hob/Programs/llvm-src/llvm-3.9.0.src/build/bin-sw/llvm-mc
+LLAS_FLAGS="-arch=cpu0el -filetype=obj"
+
+NO_EXT=""
+
+BUILD_DIR=../../build
+
+cd l2/
+BUILD_FILES=`ls *.s`
+for fext in $BUILD_FILES
+do
+  f=${fext%.s}
+  echo "building $f"
+  ${LLAS} ${LLAS_FLAGS} ${f}.s -o ${BUILD_DIR}/${f}.o
+done
