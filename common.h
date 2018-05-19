@@ -9,8 +9,14 @@
 
 #define PERM_CHECK
 
-#define EXCEP_WATCH
+#undef EXCEP_WATCH
+
+#undef WATCH_UART_OUT_DIRECT
 
 #undef INSTR_WATCH
+
+#undef WATCH_DEBUG_STD_OUTPUT
+
+#define Printf(...) do { printf (__VA_ARGS__); fflush(stdout); } while (0)
 
 #endif // COMMON_H

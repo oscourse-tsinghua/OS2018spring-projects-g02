@@ -1,21 +1,28 @@
 #include "machine.h"
+#include <ctype.h>
 
 int mem_write(machine_t* m, uint32_t addr, uint32_t val)
 {
-  if (addr & 3)
+  if (addr & 3) {
+    Printf("%08X\n", addr);
+    assert(0 && "mem_write: unaligned");
     return E_MEM_ALIGN;
-  // a stupid MMU here
+  }
+#ifdef WATCH_UART_OUT_DIRECT
+  // debug hack
   if (addr == MEM_UART_OUT_DIRECT) {
-    printf("> uart direct out: %08X    (d=% 10d) (c=%c)\n", val, val, val);
+    Printf("> uart direct out: %08X    (d=% 10d)\n",
+        val, val);
     return 0;
   }
+#endif
   vma_t* vma = m->mm.vma;
   while (vma != NULL) {
     if (vma->begin <= addr && addr < vma->end) {
 #ifdef PERM_CHECK
       if (!(vma->perm & PF_W)) {
-        printf("memory error: E_MEM_PERM\n");
-        printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
+        Printf("memory error: E_MEM_PERM\n");
+        Printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
         assert(0);
         return E_MEM_PERM;
       }
@@ -25,8 +32,8 @@ int mem_write(machine_t* m, uint32_t addr, uint32_t val)
     }
     vma = vma->next;
   }
-  printf("memory error: E_MEM_SEGFAULT\n");
-  printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
+  Printf("memory error: E_MEM_SEGFAULT\n");
+  Printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
   assert(0);
   return E_MEM_SEGFAULT;
 }
@@ -34,15 +41,17 @@ int mem_write(machine_t* m, uint32_t addr, uint32_t val)
 
 int mem_read(machine_t* m, uint32_t addr, uint32_t* rv) 
 {
-  if (addr & 3)
+  if (addr & 3) {
+    assert(0 && "mem_read: unaligned");
     return E_MEM_ALIGN;
+  }
   vma_t* vma = m->mm.vma;
   while (vma != NULL) {
     if (vma->begin <= addr && addr < vma->end) {
 #ifdef PERM_CHECK
       if (!(vma->perm & PF_R)) {
-        printf("memory error: E_MEM_PERM\n");
-        printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
+        Printf("memory error: E_MEM_PERM\n");
+        Printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
         assert(0);
         return E_MEM_PERM;
       }
@@ -52,8 +61,8 @@ int mem_read(machine_t* m, uint32_t addr, uint32_t* rv)
     }
     vma = vma->next;
   }
-  printf("memory error: E_MEM_SEGFAULT\n");
-  printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
+  Printf("memory error: E_MEM_SEGFAULT\n");
+  Printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
   assert(0);
   return E_MEM_SEGFAULT;
 }
@@ -61,15 +70,17 @@ int mem_read(machine_t* m, uint32_t addr, uint32_t* rv)
 int mem_exec(machine_t* m, uint32_t addr,
     void (*cpuexec)(machine_t* m, uint32_t inst))
 {
-  if (addr & 3)
+  if (addr & 3) {
+    assert(0 && "mem_exec: unaligned");
     return E_MEM_ALIGN;
+  }
   vma_t* vma = m->mm.vma;
   while (vma != NULL) {
     if (vma->begin <= addr && addr < vma->end) {
 #ifdef PERM_CHECK
       if (!(vma->perm & PF_X)) {
-        printf("memory error: E_MEM_PERM\n");
-        printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
+        Printf("memory error: E_MEM_PERM\n");
+        Printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
         assert(0);
         return E_MEM_PERM;
       }
@@ -79,8 +90,8 @@ int mem_exec(machine_t* m, uint32_t addr,
     }
     vma = vma->next;
   }
-  printf("memory error: E_MEM_SEGFAULT\n");
-  printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
+  Printf("memory error: E_MEM_SEGFAULT\n");
+  Printf("PC=%08X, va_err=%08X\n", m->regs[REG_PC], addr);
   assert(0);
   return E_MEM_SEGFAULT;
 }

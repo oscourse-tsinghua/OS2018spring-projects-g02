@@ -4,12 +4,13 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <ctype.h>
 
 uint32_t excep = 0;
 
 void machine_init(machine_t* m)
 {
-  memset(m, 0, sizeof(m));
+  memset(m, 0, sizeof(*m));
   m->regs[REG_FR] = 0x200; // TODO: FR
   m->regs[REG_WR] = 4;
   m->regs[REG_ZR] = 0;
@@ -97,32 +98,33 @@ int instr_type(uint32_t opcode)
   }
 }
 
+#endif
+
 void dump_fr(machine_t* m)
 {
   unsigned r = m->regs[REG_FR];
   if (r & FRBIT_GIE)
-    printf("GIE ");
+    Printf("GIE ");
   if (r & FRBIT_ERET)
-    printf("ERET ");
+    Printf("ERT ");
   if (r & FRBIT_CLKEN)
-    printf("CLKEN ");
+    Printf("CEN ");
   if (r & FRBIT_CLK)
-    printf("CLK ");
+    Printf("CLK ");
   if (r & FRBIT_UART1_OUTEN)
-    printf("OUTEN ");
+    Printf("OEN ");
   if (r & FRBIT_UART1_OUT)
-    printf("OUT ");
+    Printf("OUT ");
   if (r & FRBIT_UART1_INEN)
-    printf("INEN ");
+    Printf("IEN ");
   if (r & FRBIT_UART1_IN)
-    printf("IN ");
+    Printf("IN  ");
   if (r & FRBIT_UART1_OUTRDY)
-    printf("OUTRDY ");
+    Printf("ORD ");
   if (r & FRBIT_UART1_INRDY)
-    printf("INRDY ");
+    Printf("IRD ");
 }
 
-#endif
 
 
 void exec_inst(machine_t* m, uint32_t inst)
@@ -140,26 +142,26 @@ void exec_inst(machine_t* m, uint32_t inst)
 #ifdef INSTR_WATCH
   switch (instr_type(opcode)) {
     case INSTR_TYPE_R:
-      printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, rx=%d, ry=%d, rz=%d\n",
+      Printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, rx=%d, ry=%d, rz=%d\n",
           m->regs[REG_PC], inst, m->cycno, instrname[opcode], opcode, rx, ry, rz);
       break;
     case INSTR_TYPE_I:
       if (opcode == OPCODE_BEQ && rx == REG_ZR && ry == REG_ZR && immsext == -4)
         break; // don't print spin instructions
-      printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
+      Printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, rx=%d, ry=%d, imm=%d (unsigned=%d)\n",
           m->regs[REG_PC], inst, m->cycno, instrname[opcode], opcode, rx, ry, immsext, imm);
       break;
     case INSTR_TYPE_J:
-      printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, imm=%d (hex=%08X)\n",
+      Printf("* [%08X]{%08X} [%-10d] [%6s] opcode=%d, imm=%d (hex=%08X)\n",
           m->regs[REG_PC], inst, m->cycno, instrname[opcode], opcode, imm26sext, imm26sext);
       break;
     default:
       assert(0 && "bad instr type");
   }
 #endif
+  fflush(stdout);
 
   int err = 0;
-
   switch (opcode) {
     case OPCODE_ADD:
       m->regs[rx] = m->regs[ry] + m->regs[rz];
@@ -184,11 +186,11 @@ void exec_inst(machine_t* m, uint32_t inst)
       break;
     case OPCODE_LD:
       err = mem_read(m, m->regs[ry] + immsext, &(m->regs[rx]));
-      assert(err == 0);
+      assert(err == 0 && "bad load");
       break;
     case OPCODE_ST:
       err = mem_write(m, m->regs[ry] + immsext, m->regs[rx]);
-      assert(err == 0);
+      assert(err == 0 && "bad store");
       break;
     case OPCODE_SHR:
       m->regs[rx] = m->regs[ry] >> m->regs[rz];
@@ -255,12 +257,18 @@ void check_excep(machine_t* m)
   // check for ERET
   if (m->regs[REG_FR] & FRBIT_ERET) {
 #ifdef EXCEP_WATCH
-    printf("@ [%08X] eret\n", m->regs[REG_PC]);
+    Printf("@ [%08X] eret", m->regs[REG_PC]);
+    fflush(stdout);
 #endif
     m->regs[REG_FR] &= ~FRBIT_ERET;
     m->regs[REG_FR] |= FRBIT_GIE; // enable interrupts
     assert(mem_read(m, m->regs[REG_SP], &(m->regs[REG_PC])) == 0);
     m->regs[REG_SP] += 4; // pop PC
+#ifdef EXCEP_WATCH
+    Printf(" to %08X\n", m->regs[REG_PC]);
+    dump_fr(m);
+    Printf("\n");
+#endif
     return;
   }
 
@@ -272,19 +280,25 @@ void check_excep(machine_t* m)
 
   if ((regfr & FRBIT_CLKEN) && (regfr & FRBIT_CLK)) {
 #ifdef EXCEP_WATCH
-    printf("@ [%08X] clk\n", m->regs[REG_PC]);
+    Printf("@ [%08X] clk\n", m->regs[REG_PC]);
+    dump_fr(m);
+    Printf("\n");
 #endif
     excep = 1;
   }
   if ((regfr & FRBIT_UART1_OUTEN) && (regfr & FRBIT_UART1_OUT)) {
 #ifdef EXCEP_WATCH
-    printf("@ [%08X] uartout\n", m->regs[REG_PC]);
+    Printf("@ [%08X] uartout\n", m->regs[REG_PC]);
+    dump_fr(m);
+    Printf("\n");
 #endif
     excep = 1;
   }
   if ((regfr & FRBIT_UART1_INEN) && (regfr & FRBIT_UART1_IN)) {
 #ifdef EXCEP_WATCH
-    printf("@ [%08X] uartin\n", m->regs[REG_PC]);
+    Printf("@ [%08X] uartin\n", m->regs[REG_PC]);
+    dump_fr(m);
+    Printf("\n");
 #endif
     excep = 1;
   }

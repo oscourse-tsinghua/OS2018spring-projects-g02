@@ -8,3 +8,5 @@ add_executable(cpu0emu
   machine.h
   common.h
 	main.c)
+
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")

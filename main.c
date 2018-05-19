@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
+#include <stdlib.h>
 
 #include "common.h"
 #include "machine.h"
@@ -38,7 +39,7 @@ int user_inbuf_end;
 
 void cpu_run(machine_t* m, unsigned n_cycles)
 {
-	struct termios * original = terminal_setup();
+  struct termios * original = terminal_setup();
 
   user_inbuf_beg = 0;
   user_inbuf_end = 0;
@@ -53,9 +54,14 @@ void cpu_run(machine_t* m, unsigned n_cycles)
     // check for machine output
     unsigned req_rtn;
     if (uart_request(m, &req_rtn) == 0) {
+#ifdef WATCH_DEBUG_STD_OUTPUT
       printf("> uart std out: %08X    (d=% 10d) (c=%c)\n",
           req_rtn, req_rtn, req_rtn);
       fflush(stdout);
+#else
+      printf("%c", req_rtn);
+      fflush(stdout);
+#endif
     }
 
     // check for user input, and buffer it
@@ -74,8 +80,11 @@ void cpu_run(machine_t* m, unsigned n_cycles)
 
     // actually execute
     check_excep(m);
-    mem_exec(m, m->regs[REG_PC], exec_inst);
+    assert(mem_exec(m, m->regs[REG_PC], exec_inst) == 0);
+    fflush(stdout);
   }
+
+  sleep(1);
 
   tcsetattr(STDOUT_FILENO, TCSANOW, original);
   tcsetattr(STDOUT_FILENO, TCSAFLUSH, original);
@@ -103,5 +112,6 @@ int main(int argc, char** argv)
 
   machine_init(&machine);  
   load_elf(argv[1], &machine);
-  cpu_run(&machine, atoi(argv[2]));
+  unsigned n_cycles = atoi(argv[2]);
+  cpu_run(&machine, n_cycles);
 }
