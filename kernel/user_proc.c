@@ -16,7 +16,6 @@
 #include "user_proc.h"
 
 void user_proc_1(void){
-  *(unsigned*) 0x300090 = 0xFFFF0001;
   unsigned entry = 1;
 	while(1){
 		if (entry == 1) {
@@ -38,7 +37,6 @@ void user_proc_1(void){
 unsigned int num_ticks = 0;
 
 void clock_tick_counter(void){
-  *(unsigned*) 0x300090 = 0xFFFF0002;
 	struct kernel_message clock_server_message;
 	struct kernel_message clock_server_reply;
 	clock_server_message.message_type = CLOCK_TICK_NOTIFY;
@@ -52,11 +50,6 @@ void clock_tick_counter(void){
 void uart1_out_ready_notifier(void){
 	struct kernel_message output_server_message;
 	struct kernel_message output_server_reply;
-  *(unsigned*) 0x300090 = 0xFFFF0003;
-  *(unsigned*) 0x300090 = 0xAAEE;
-  *(unsigned*) 0x300090 = (unsigned) &output_server_message;
-  *(unsigned*) 0x300090 = (unsigned) PID_UART1_OUT_SERVER;
-  *(unsigned*) 0x300090 = (unsigned) &output_server_reply;
 	output_server_message.message_type = UART1_OUT_READY_NOTIFY;
 	output_server_message.data = 1;
 	while(1){
@@ -73,7 +66,6 @@ void uart1_out_ready_notifier(void){
 }
 
 void uart1_out_server(void){
-  *(unsigned*) 0x300090 = 0xFFFF0004;
 	struct message_queue output_requests;
 	struct kernel_message message_to_reply;
 	struct kernel_message received_message;
@@ -112,7 +104,6 @@ void uart1_out_server(void){
 }
 
 void uart1_in_ready_notifier(void){
-  *(unsigned*) 0x300090 = 0xFFFF0005;
 	struct kernel_message input_server_message;
 	struct kernel_message input_server_reply;
 	input_server_message.message_type = UART1_IN_READY_NOTIFY;
@@ -131,7 +122,6 @@ void uart1_in_ready_notifier(void){
 }
 
 void uart1_in_server(void){
-  *(unsigned*) 0x300090 = 0xFFFF0006;
 	struct kernel_message message_to_reply;
 	struct kernel_message received_message;
 	struct kernel_message output_server_message;
@@ -171,7 +161,6 @@ void uart1_in_server(void){
 }
 
 void command_server(void){
-  *(unsigned*) 0x300090 = 0xFFFF0007;
 	struct kernel_message received_message;
 	struct kernel_message input_server_reply;
 	input_server_reply.message_type = MESSAGE_ACKNOWLEDGED;

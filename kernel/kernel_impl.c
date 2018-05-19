@@ -40,8 +40,6 @@ void schedule_next_task(void){
 	/*  Set its stack pointer */
 	g_current_sp = next_task->stack_pointer;
 	current_task_id = next_task->pid;
-  *(unsigned*) 0x300090 = 0xAAAAAAAA;
-  *(unsigned*) 0x300090 = current_task_id;
 }
 
 void unblock_tasks_for_event(enum kernel_event event){
@@ -54,29 +52,23 @@ void unblock_tasks_for_event(enum kernel_event event){
 			}
 			break;
 		}case UART1_OUT_READY:{
-      *(unsigned*) 0x300090 = 0xDEAD0000;
 			struct process_control_block * unblocked_task;
 			if(task_queue_current_count(&blocked_on_uart1_out_ready_queue) == 0){
-        *(unsigned*) 0x300090 = 0xDEAD0011;
 				/*  Nothing has blocked on this event yet so save the signal */
 				assert(!saved_uart1_out_ready && "There should be no previous saved uart signal.  Expect output problems.");
 				saved_uart1_out_ready = 1;
 			}else{
-        *(unsigned*) 0x300090 = 0xDEAD0012;
 				unblocked_task = task_queue_pop_start(&blocked_on_uart1_out_ready_queue); 
 				add_task_to_ready_queue(unblocked_task);
 			}
 			break;
 		}case UART1_IN_READY:{
-      *(unsigned*) 0x300090 = 0xDEAD0031;
 			struct process_control_block * unblocked_task;
 			if(task_queue_current_count(&blocked_on_uart1_in_ready_queue) == 0){
-        *(unsigned*) 0x300090 = 0xDEAD0032;
 				/*  Nothing has blocked on this event yet so save the signal */
 				assert(!saved_uart1_in_ready && "There should be no previous saved uart signal.  Expect input problems.");
 				saved_uart1_in_ready = 1;
 			}else{
-        *(unsigned*) 0x300090 = 0xDEAD0033;
 				unblocked_task = task_queue_pop_start(&blocked_on_uart1_in_ready_queue); 
 				add_task_to_ready_queue(unblocked_task);
 			}
@@ -123,8 +115,6 @@ void save_current_task(struct task_queue * queue, enum process_state state){
 }
 
 unsigned int scheduler(void){
-  *(unsigned*) 0x300090 = 0xBBBBBBBB;
-  *(unsigned*) 0x300090 = current_task_id;
 	save_current_task_as_ready();
 	schedule_next_task();
 	return 3;
@@ -140,7 +130,6 @@ unsigned int k_release_processor(void){
 }
 
 void k_block_on_event(enum kernel_event event){
-  *(unsigned*) 0x300090 = 0xDEAD0020;
 	switch(event){
 		case CLOCK_TICK_EVENT:{
 			save_current_task(&blocked_on_clock_tick_queue, BLOCKED_ON_CLOCK_TICK);
@@ -171,7 +160,6 @@ void k_block_on_event(enum kernel_event event){
 }
 
 void k_irq_handler(void){
-  *(unsigned*) 0x300090 = 0xDEAD0001;
 	unsigned int flags_register = read_flags_register();
   /* compiler hack: TODO cleanup */
   unsigned ass;
@@ -180,18 +168,13 @@ void k_irq_handler(void){
 		/*  De-assert the bit last, so we can detect nested page fault exceptions */
 		deassert_bits_in_flags_register(PAGE_FAULT_EXCEPTION_ASSERTED_BIT);
 	}else if((ass = flags_register & TIMER1_ASSERTED_BIT)){
-    *(unsigned*) 0x300090 = 0xDEAD0004;
 		deassert_bits_in_flags_register(TIMER1_ASSERTED_BIT);
 		num_clock_ticks++;
 		unblock_tasks_for_event(CLOCK_TICK_EVENT);
 	}else if((ass = flags_register & UART1_OUT_ASSERTED_BIT)){
-    *(unsigned*) 0x300090 = 0xDEAD0002;
 		deassert_bits_in_flags_register(UART1_OUT_ASSERTED_BIT);
-    *(unsigned*) 0x300090 = 0xDEAD0003;
 		unblock_tasks_for_event(UART1_OUT_READY);
-    *(unsigned*) 0x300090 = 0xDEAD0007;
 	}else if((ass = flags_register & UART1_IN_ASSERTED_BIT)){
-    *(unsigned*) 0x300090 = 0xDEAD0005;
 		deassert_bits_in_flags_register(UART1_IN_ASSERTED_BIT);
 		unblock_tasks_for_event(UART1_IN_READY);
 	}else{
@@ -203,28 +186,19 @@ void k_irq_handler(void){
 }
 
 void k_send_message(struct kernel_message * message, unsigned int destination_pid, struct kernel_message * reply){
-  *(unsigned*) 0x300090 = 0x0000AAEE;
-  *(unsigned*) 0x300090 = (unsigned) message;
-  *(unsigned*) 0x300090 = (unsigned) destination_pid;
-  *(unsigned*) 0x300090 = (unsigned) reply;
 	/*  Remember where to store the reply */
 	pcbs[current_task_id].reply_message = reply;
-  *(unsigned*) 0x300090 = 0x0000AA00;
 	message->source_id = current_task_id;
-  *(unsigned*) 0x300090 = 0x0000AAED;
 	if(pcbs[destination_pid].state == BLOCKED_ON_SEND){
-    *(unsigned*) 0x300090 = 0x0000AAEC;
 		/*  The destination is already blocked on our message send */
 		pcbs[current_task_id].state = BLOCKED_ON_RECEIVE;
 		add_task_to_ready_queue(&pcbs[destination_pid]);
 		*(pcbs[destination_pid].recieve_message) = *message;
 	}else{
-    *(unsigned*) 0x300090 = 0x0000AAEB;
 		/*  The destination has not asked for the message yet */
 		message_queue_push_end(&pcbs[destination_pid].messages, *message); 
 		pcbs[current_task_id].state = BLOCKED_ON_REPLY;
 	}
-  *(unsigned*) 0x300090 = 0x0000AAEA;
 	pcbs[current_task_id].stack_pointer = g_current_sp;
 	schedule_next_task();
 }
@@ -311,7 +285,6 @@ void k_kernel_init(void){
 	task_queue_init(&blocked_on_uart1_out_ready_queue, MAX_NUM_PROCESSES);
 	task_queue_init(&blocked_on_uart1_in_ready_queue, MAX_NUM_PROCESSES);
 
-  *(unsigned*) (0x300090) = '0';
 	pcbs[0].state = ACTIVE; 
   /*  Task 0 is not really a task, it is the 'int main' that we might want to return to later for graceful exit. */
 

@@ -108,13 +108,7 @@ send_message:
 	.set	noreorder
 	.set	nomacro
 
-  lui $t1, 0x30
-  ori $t0, $zr, 0xAAAE
-  sto $t0, 0x90($t1)
   loa $t0, 8($sp)
-  sto $a0, 0x90($t1)
-  sto $a1, 0x90($t1)
-  sto $t0, 0x90($t1)
 
 # 模仿中断中保存 PC
   addiu $sp, $sp, -4
@@ -180,11 +174,6 @@ block_on_event:
   sto $t9, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
-
-  lui $t0, 0x30
-  ori $t1, $zr, 0xEAFB
-  sto $t1, 0x90($t0)
-  sto $sp, 0x90($t0)
 
   # 一个参数 a0
   addiu $sp, $sp, -8
@@ -504,11 +493,6 @@ irq_handler:
 
 # ...
 # 从服务例程返回回来
-
-  lui $t0, 0x30
-  lui $t1, 0xABCD
-  ori $t1, $t1, 0xABCD
-  sto $t1, 0x90($t0)
 
 # 切换到应用栈
   lui	$t0, %hi(g_current_sp)
