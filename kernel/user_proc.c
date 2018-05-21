@@ -186,9 +186,6 @@ void command_server(void){
 							printf("Task 0x%x Priority: 0x%x\n", i, pcbs[i].priority);
 						}
 						break;
-					}case 113:{/* letter 'q' */
-						kernel_exit();
-						break;
 					}default:{
 						printf("\n");
 						printf("Unknown command.");

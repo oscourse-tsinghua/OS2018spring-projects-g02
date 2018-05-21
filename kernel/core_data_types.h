@@ -16,6 +16,8 @@
     under the License.
 */
 
+#include "printf.h"
+
 #define STACK_SIZE 100000
 
 /* ensure that MAX_NUM_PROCESSES is an exponent of 2 */

@@ -24,6 +24,10 @@ void put_hex_uart(unsigned v, unsigned bigletter)
     d2h = dig2hexbig;
   else
     d2h = dig2hex;
+  if (!v) {
+    putchar_busy('0');
+    return;
+  }
   while (v) {
     unsigned l4b = v & 0xF;
     unsigned ctp = '0' + l4b;
@@ -36,53 +40,13 @@ void put_hex_uart(unsigned v, unsigned bigletter)
     outp[ptr++] = ctp;
     v >>= 4;
   }
-  // while (ptr >= 0)
-  //  cannot write as above because our cpu has no support signed comparison
-  while (ptr != 0)
+  ptr--;
+  while (ptr != ~0u)
     putchar_busy(outp[ptr--]);
-  putchar_busy(outp[0]);  // if v is 0, output a single '0' instead of nothing
 }
 
 
 // by default is busy
-unsigned printf(const uchar* fmt, ...)
-{
-	va_list al;
-	va_start(al, fmt);
-
-  unsigned i = 0;
-  unsigned spec_found = 0;
-  while (1) {
-    i = loadbyteu(fmt);
-    if (i == 0)
-      break;
-    if (!spec_found) {
-      if (i == '%')
-        spec_found = 1;
-      else
-        putchar_busy(i);
-    } else {
-      switch (i) {
-        case 'x':
-          put_hex_uart(va_arg(al, unsigned), 0);
-          break;
-        case 'X':
-          put_hex_uart(va_arg(al, unsigned), 1);
-          break;
-        default:
-          putchar_busy(i);
-          break;
-      }
-      spec_found = 0;
-    }
-    fmt++;
-  }
-	va_end(al);
-	return 0;
-}
-
-
-// actually the same
 unsigned printf_busy(const uchar* fmt, ...)
 {
 	va_list al;
@@ -118,5 +82,4 @@ unsigned printf_busy(const uchar* fmt, ...)
 	va_end(al);
 	return 0;
 }
-
 

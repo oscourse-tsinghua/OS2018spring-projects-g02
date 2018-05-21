@@ -16,7 +16,6 @@
     under the License.
 */
 
-
 #define assert_stringify_indirect(a) #a
 #define assert_stringify(a) assert_stringify_indirect(a)
 

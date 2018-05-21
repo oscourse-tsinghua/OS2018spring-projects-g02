@@ -22,7 +22,7 @@ unsigned int current_task_id = 0;
 unsigned int num_clock_ticks = 0;
 unsigned int saved_uart1_out_ready = 0;
 unsigned int saved_uart1_in_ready = 0;
-unsigned int current_timer_period = 0xA0000;
+unsigned int current_timer_period = 0xA000;
 
 void schedule_next_task(void){
 	struct process_control_block * next_task;
