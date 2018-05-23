@@ -44,6 +44,3 @@ unsigned int user_proc_6_stack[STACK_SIZE];
 unsigned int user_proc_7_stack[STACK_SIZE];
 unsigned int user_proc_8_stack[STACK_SIZE];
 unsigned int user_proc_9_stack[STACK_SIZE];
-
-/*unsigned int num_level_1_page_table_mappings_used = 0;
-unsigned int num_level_2_page_table_mappings_used = 0;*/

@@ -22,9 +22,6 @@
 
 #include "../emulators/c/op-cpu.h"
 
-#define MAX_LEVEL_1_PAGE_TABLE_MAPPINGS 4194304
-#define MAX_LEVEL_2_PAGE_TABLE_MAPPINGS 2048
-
 #define PID_INIT 0
 #define PID_USER_PROC_1 1
 #define PID_CLOCK_COUNTER 2
@@ -70,11 +67,5 @@ extern unsigned int user_proc_6_stack[STACK_SIZE];
 extern unsigned int user_proc_7_stack[STACK_SIZE];
 extern unsigned int user_proc_8_stack[STACK_SIZE];
 extern unsigned int user_proc_9_stack[STACK_SIZE];
-
-extern unsigned int num_level_1_page_table_mappings_used;
-extern unsigned int num_level_2_page_table_mappings_used;
-
-extern unsigned int level_1_page_table_mappings[MAX_LEVEL_1_PAGE_TABLE_MAPPINGS];
-extern unsigned int level_2_page_table_mappings[MAX_LEVEL_2_PAGE_TABLE_MAPPINGS];
 
 #endif
