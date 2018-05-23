@@ -103,15 +103,18 @@ machine_t machine;
  */
 int main(int argc, char** argv)
 {
-  if (argc != 3) {
-    printf("Usage: %s FILE MAXCYCLES\n", argv[0]);
+  if (argc != 3 && argc != 4) {
+    printf("Usage: %s FILE MAXCYCLES [FILETYPE]\n", argv[0]);
     printf("  FILE: executable object.\n");
     printf("  MAXCYCLES: number of execution cycles. 0 means unlimited\n");
+    printf("  FILETYPE: the type of FILE. Possible values:\n");
+    printf("    1: executable ELF file. This is the default.\n");
+    printf("    2: memory image, starting from address 0\n");
     return 0;
   }
 
   machine_init(&machine);  
-  load_elf(argv[1], &machine);
+  load_auto((argc == 3) ? FILETYPE_ELF : atoi(argv[3]), argv[1], &machine);
   unsigned n_cycles = atoi(argv[2]);
   cpu_run(&machine, n_cycles);
 }

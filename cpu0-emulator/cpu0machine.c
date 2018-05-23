@@ -12,11 +12,9 @@ uint32_t excep = 0;
 void machine_init(machine_t* m)
 {
   memset(m, 0, sizeof(*m));
-  m->regs[REG_FR] = 0x200; // TODO: FR
+  m->regs[REG_FR] = 0x200;
   m->regs[REG_WR] = 4;
   m->regs[REG_ZR] = 0;
-
-  m->regs[REG_SP] = STACK_POS + STACK_SIZE - 4;
 
   m->cycno = 0;
 }
@@ -327,7 +325,7 @@ vma_t* add_vma(machine_t* m, uint32_t beg, uint32_t end, uint32_t perm)
   vma->perm = perm;
   vma->next = m->mm.vma;
   m->mm.vma = vma;
-  vma->data = calloc(end - beg, 1); // 1 MB of stack space
+  vma->data = calloc(end - beg, 1);
   return vma;
 }
 

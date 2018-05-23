@@ -11,7 +11,7 @@
 
 #undef EXCEP_WATCH
 
-#undef WATCH_UART_OUT_DIRECT
+#define WATCH_UART_OUT_DIRECT
 
 #undef INSTR_WATCH
 

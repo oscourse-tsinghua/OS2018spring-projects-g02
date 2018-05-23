@@ -6,6 +6,9 @@
 // object image cannot be greater than 8MB
 #define MAX_IMG_SZ 8*1024*1024 
 
-void load_elf(const char* filename, machine_t* rv);
+#define FILETYPE_ELF 1
+#define FILETYPE_IMGZ 2
+
+void load_auto(unsigned load_type, const char* filename, machine_t* rv);
 
 #endif // LOADER_H
