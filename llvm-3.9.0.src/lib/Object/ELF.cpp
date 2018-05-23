@@ -40,6 +40,13 @@ StringRef getELFRelocationTypeName(uint32_t Machine, uint32_t Type) {
       break;
     }
     break;
+  case ELF::EM_CPU0:
+    switch (Type) {
+#include "llvm/Support/ELFRelocs/Cpu0.def"
+    default:
+      break;
+    }
+    break;
   case ELF::EM_AARCH64:
     switch (Type) {
 #include "llvm/Support/ELFRelocs/AArch64.def"

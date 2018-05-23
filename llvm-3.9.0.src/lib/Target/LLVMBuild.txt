@@ -29,6 +29,7 @@ subdirectories =
  MSP430
  NVPTX
  Mips
+ Cpu0
  PowerPC
  Sparc
  SystemZ

@@ -756,6 +756,10 @@ static void EmitGenDwarfInfo(MCStreamer *MCOS,
   // draft has no standard code for assembler.
   MCOS->EmitIntValue(dwarf::DW_LANG_Mips_Assembler, 2);
 
+  // AT_language, a 4 byte value.  We use DW_LANG_Cpu0_Assembler as the dwarf2
+  // draft has no standard code for assembler.
+//  MCOS->EmitIntValue(dwarf::DW_LANG_Cpu0_Assembler, 2);
+
   // Third part: the list of label DIEs.
 
   // Loop on saved info for dwarf labels and create the DIEs for them.
