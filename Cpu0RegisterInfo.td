@@ -67,5 +67,6 @@ def CPURegs : RegisterClass<"Cpu0", [i32], 32, (add
 
 
 // the compiler won't write to SW
-def GPROut : RegisterClass<"Cpu0", [i32], 32, (add (sub CPURegs, SW))>;
+// def GPROut : RegisterClass<"Cpu0", [i32], 32, (add (sub CPURegs, SW))>;
+def GPROut : RegisterClass<"Cpu0", [i32], 32, (add CPURegs)>;
 

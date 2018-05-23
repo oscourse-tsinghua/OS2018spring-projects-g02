@@ -273,7 +273,7 @@ class JumpLinkReg<bits<6> op, string instr_asm,
 }
 
 let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
-    hasDelaySlot = 1, hasExtraSrcRegAllocReq = 1, Defs = [AT] in 
+    hasDelaySlot = 0, hasExtraSrcRegAllocReq = 1, Defs = [AT] in 
 {
   class TailCall<Instruction JumpInst>:
     Cpu0Instr_PseudoSE<(outs), (ins calltarget:$target), []>,
