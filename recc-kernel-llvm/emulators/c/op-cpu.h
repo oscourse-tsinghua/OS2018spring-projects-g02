@@ -103,4 +103,6 @@
 #define	BLT_OP_CODE (12u << OP_CODE_OFFSET)
 #define	LL_OP_CODE  (13u << OP_CODE_OFFSET)
 
+#define INITIAL_TIMER_PERIOD_VALUE 0xA000
+
 #endif

@@ -22,7 +22,6 @@ unsigned int current_task_id = 0;
 unsigned int num_clock_ticks = 0;
 unsigned int saved_uart1_out_ready = 0;
 unsigned int saved_uart1_in_ready = 0;
-unsigned int current_timer_period = 0xA000;
 
 void schedule_next_task(void){
 	struct process_control_block * next_task;
@@ -309,7 +308,7 @@ void k_kernel_init(void){
   new_thread(PID_COMMAND_SERVER,
       3, &user_proc_9_stack[STACK_SIZE-1], command_server);
 
-	set_timer_period(current_timer_period);
+	set_timer_period(INITIAL_TIMER_PERIOD_VALUE);
 	timer_interrupt_enable();
 	uart1_out_interrupt_enable();
 	uart1_in_interrupt_enable();
