@@ -9,6 +9,8 @@
 // This is the top level entry point for the Cpu0 target.
 //===----------------------------------------------------------------------===//
 
+// Used for .s->.o
+
 //===----------------------------------------------------------------------===//
 // Target-independent interfaces
 //===----------------------------------------------------------------------===//
@@ -20,5 +22,6 @@ include "llvm/Target/Target.td"
 //===----------------------------------------------------------------------===//
 
 include "Cpu0RegisterInfo.td"
+def GPROut : RegisterClass<"Cpu0", [i32], 32, (add CPURegs)>;
 include "Cpu0.td"
 

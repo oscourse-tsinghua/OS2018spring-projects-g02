@@ -1,6 +1,5 @@
 set(LLVM_TARGET_DEFINITIONS Cpu0Asm.td)
 tablegen(LLVM Cpu0GenAsmMatcher.inc -gen-asm-matcher)
-
 set(LLVM_TARGET_DEFINITIONS Cpu0Other.td)
 
 # Generate Cpu0GenRegisterInfo.inc and Cpu0GenInstrInfo.inc which included by 
