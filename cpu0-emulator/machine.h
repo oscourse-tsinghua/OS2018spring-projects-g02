@@ -24,6 +24,7 @@
 #define REG_LR 7
 typedef uint32_t reg_t[NUM_REGS];
 
+#define FRBIT_HALT (1u << 0u)
 #define FRBIT_GIE (1u << 1u)
 #define FRBIT_ERET (1u << 2u)
 #define FRBIT_CLKEN (1u << 3u)

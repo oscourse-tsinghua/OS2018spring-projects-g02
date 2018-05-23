@@ -107,3 +107,25 @@ init_task_stack:
 	.end	init_task_stack
 $init_task_stack_end:
 	.size	init_task_stack, ($init_task_stack_end)-init_task_stack
+
+
+##############################################################################
+	.globl	fatal
+	.p2align	2
+	.type	fatal,@function
+	.ent	fatal                    # @fatal
+fatal:
+	.set	noreorder
+	.set	nomacro
+
+  # in a0 holds the fatal cause
+  addiu $t1, $zr, 1
+  or $fr, $fr, $t1
+  # halts the processor
+
+	.set	macro
+	.set	reorder
+	.end	fatal
+$fatal_end:
+	.size	fatal, ($fatal_end)-fatal
+

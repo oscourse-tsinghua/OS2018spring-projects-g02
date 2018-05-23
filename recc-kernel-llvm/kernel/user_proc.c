@@ -59,7 +59,7 @@ void uart1_out_ready_notifier(void){
 			case MESSAGE_ACKNOWLEDGED:{
 				break;
 			}default:{
-				assert(0 && "Unknown message type.\n");
+        fatal(2); // Unknown message type.
 			}
 		}
 	}
@@ -97,7 +97,7 @@ void uart1_out_server(void){
 				}
 				break;
 			}default:{
-				assert(0 && "Unknown message type.\n");
+        fatal(3); // Unknown message type.
 			}
 		}
 	}
@@ -115,7 +115,7 @@ void uart1_in_ready_notifier(void){
 			case MESSAGE_ACKNOWLEDGED:{
 				break;
 			}default:{
-				assert(0 && "Unknown message type.\n");
+        fatal(4); // Unknown message type.
 			}
 		}
 	}
@@ -139,7 +139,7 @@ void uart1_in_server(void){
 					case MESSAGE_ACKNOWLEDGED:{
 						break;
 					}default:{
-						assert(0 && "Unknown message type.\n");
+            fatal(5); // Unknown message type.
 					}
 				}
 				/*  Let the command server know what is being typed */
@@ -148,13 +148,13 @@ void uart1_in_server(void){
 					case MESSAGE_ACKNOWLEDGED:{
 						break;
 					}default:{
-						assert(0 && "Unknown message type.\n");
+						fatal(6); // Unknown message type.
 					}
 				}
 				reply_message(&message_to_reply, received_message.source_id);
 				break;
 			}default:{
-				assert(0 && "Unknown message type.\n");
+        fatal(7); // Unknown message type.
 			}
 		}
 	}
@@ -186,14 +186,14 @@ void command_server(void){
 							printf("Task 0x%x Priority: 0x%x\n", i, pcbs[i].priority);
 						}
 						break;
-					}default:{
+          }default:{
 						printf("\n");
 						printf("Unknown command.");
 					}
 				}
 				break;
 			}default:{
-				assert(0 && "Unknown message type.\n");
+				fatal(8); // Unknown message type.
 			}
 		}
 		reply_message(&input_server_reply, received_message.source_id);

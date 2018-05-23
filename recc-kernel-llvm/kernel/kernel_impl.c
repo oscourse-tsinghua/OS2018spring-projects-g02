@@ -16,7 +16,7 @@
 #include "printf.h"
 #include "private_kernel_interface.h"
 #include "../emulators/c/op-cpu.h"
-#include <assert.h>
+#include "fatal.h"
 
 unsigned int current_task_id = 0;
 unsigned int num_clock_ticks = 0;
@@ -55,7 +55,9 @@ void unblock_tasks_for_event(enum kernel_event event){
 			struct process_control_block * unblocked_task;
 			if(task_queue_current_count(&blocked_on_uart1_out_ready_queue) == 0){
 				/*  Nothing has blocked on this event yet so save the signal */
-				assert(!saved_uart1_out_ready && "There should be no previous saved uart signal.  Expect output problems.");
+        if (saved_uart1_out_ready)
+          fatal(9); 
+        // There should be no previous saved uart signal.  Expect output problems.
 				saved_uart1_out_ready = 1;
 			}else{
 				unblocked_task = task_queue_pop_start(&blocked_on_uart1_out_ready_queue); 
@@ -66,7 +68,9 @@ void unblock_tasks_for_event(enum kernel_event event){
 			struct process_control_block * unblocked_task;
 			if(task_queue_current_count(&blocked_on_uart1_in_ready_queue) == 0){
 				/*  Nothing has blocked on this event yet so save the signal */
-				assert(!saved_uart1_in_ready && "There should be no previous saved uart signal.  Expect input problems.");
+				if (saved_uart1_in_ready)
+          fatal(10);
+        // There should be no previous saved uart signal.  Expect input problems.
 				saved_uart1_in_ready = 1;
 			}else{
 				unblocked_task = task_queue_pop_start(&blocked_on_uart1_in_ready_queue); 
@@ -74,7 +78,7 @@ void unblock_tasks_for_event(enum kernel_event event){
 			}
 			break;
 		}default:{
-			assert(0 && "Unhandled unblock event.\n");
+      fatal(11); // Unhandled unblock event.
 			break;
 		}
 	}
@@ -154,7 +158,7 @@ void k_block_on_event(enum kernel_event event){
 			}
 			break;
 		}default:{
-			assert(0 && "Blocking on unknown event.\n");
+			fatal(12); // Blocking on unknown event.
 		}
 	}
 }
@@ -309,6 +313,7 @@ void k_kernel_init(void){
 	timer_interrupt_enable();
 	uart1_out_interrupt_enable();
 	uart1_in_interrupt_enable();
+  // if direct output is not enabled, ignore
   *(unsigned*) (0x300090) = 'K';
   *(unsigned*) (0x300090) = 'E';
   *(unsigned*) (0x300090) = 'R';
@@ -316,6 +321,6 @@ void k_kernel_init(void){
   *(unsigned*) (0x300090) = 'U';
   *(unsigned*) (0x300090) = 'C';
   *(unsigned*) (0x300090) = 'C';
-  //printf_busy("Kernel load success!\n");
+  // printf_busy("Kernel load success!\n");
 	schedule_next_task();
 }

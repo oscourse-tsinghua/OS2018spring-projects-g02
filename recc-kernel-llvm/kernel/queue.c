@@ -14,7 +14,7 @@
     under the License.
 */
 #include "queue.h"
-#include <assert.h>
+#include "fatal.h"
 
 void task_queue_init(struct task_queue * queue, unsigned int size) {
 	queue->start = 0;
@@ -25,7 +25,7 @@ void task_queue_init(struct task_queue * queue, unsigned int size) {
 
 void task_queue_push_end(struct task_queue * queue, void * item) {
 	if (((queue->end + 1) & 7) == queue->start) {
-		assert(0 && "Task queue is full.\n");
+    fatal(13); // Task queue is full.
 	}
 	
 	queue->items[queue->end] = item;
@@ -36,7 +36,7 @@ void task_queue_push_end(struct task_queue * queue, void * item) {
 void * task_queue_pop_start(struct task_queue * queue) {
 	void * item;
 	if (queue->start == queue->end) {
-		assert(0 && "Task queue is empty.\n");
+    fatal(14); // Task queue is empty.
 		return (void *)0;
 	}
 
@@ -60,7 +60,7 @@ void message_queue_init(struct message_queue * queue, unsigned int size){
 
 void message_queue_push_end(struct message_queue * queue, struct kernel_message item){
 	if (((queue->end + 1) & 7) == queue->start) {
-		assert(0 && "Message queue is full.\n");
+		fatal(15); // Message queue is full.
 	}
 	
 	queue->items[queue->end] = item;
@@ -71,7 +71,7 @@ void message_queue_push_end(struct message_queue * queue, struct kernel_message 
 struct kernel_message message_queue_pop_start(struct message_queue * queue){
 	struct kernel_message item;
 	if (queue->start == queue->end) {
-		assert(0 && "Message queue is empty.\n");
+		fatal(16); // Message queue is empty.
 		return item;
 	}
 

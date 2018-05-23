@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 
 uint32_t excep = 0;
 
@@ -254,6 +255,10 @@ void exec_inst(machine_t* m, uint32_t inst)
 
 void check_excep(machine_t* m)
 {
+  if (m->regs[REG_FR] & FRBIT_HALT) {
+    Printf("*** Fatal error! Errno=%d\n", m->regs[11]);
+    exit(m->regs[11]);
+  }
   // check for ERET
   if (m->regs[REG_FR] & FRBIT_ERET) {
 #ifdef EXCEP_WATCH

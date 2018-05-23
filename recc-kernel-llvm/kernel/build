@@ -1,6 +1,6 @@
 #!/bin/sh
 CLANG=clang
-CLANG_FLAGS="-target mips-unknown-linux-gnu -O0 -emit-llvm -I../include -isystem../libc -nostdinc -nobuiltininc"
+CLANG_FLAGS="-target mips-unknown-linux-gnu -O0 -emit-llvm -I../include -isystem../libc -nostdinc"
 LLVM_BIN_DIR=../../llvm-3.9.0.src/build/bin/
 LLC=${LLVM_BIN_DIR}llc
 LLC_FLAGS="-march=cpu0el -relocation-model=static"
