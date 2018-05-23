@@ -49,7 +49,6 @@ SDValue Cpu0TargetLowering::getGlobalReg(SelectionDAG &DAG, EVT Ty) const {
 SDValue Cpu0TargetLowering::getTargetNode(GlobalAddressSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
-  printf("getTargetNode: GlobalAddressSDNode\n");
   return DAG.getTargetGlobalAddress(N->getGlobal(), SDLoc(N), Ty, 0, Flag);
 }
 
@@ -57,21 +56,18 @@ SDValue Cpu0TargetLowering::getTargetNode(GlobalAddressSDNode *N, EVT Ty,
 SDValue Cpu0TargetLowering::getTargetNode(ExternalSymbolSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
-  printf("getTargetNode: ExternalSymbolSDNode\n");
   return DAG.getTargetExternalSymbol(N->getSymbol(), Ty, Flag);
 }
 
 SDValue Cpu0TargetLowering::getTargetNode(BlockAddressSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
-  printf("getTargetNode: BlockAddressSDNode\n");
   return DAG.getTargetBlockAddress(N->getBlockAddress(), Ty, 0, Flag);
 }
 
 SDValue Cpu0TargetLowering::getTargetNode(JumpTableSDNode *N, EVT Ty,
                                           SelectionDAG &DAG,
                                           unsigned Flag) const {
-  printf("getTargetNode: JumpTableSDNode\n");
   return DAG.getTargetJumpTable(N->getIndex(), Ty, Flag);
 }
 
@@ -178,7 +174,6 @@ lowerBRCOND(SDValue Op, SelectionDAG &DAG) const
 
 SDValue Cpu0TargetLowering::lowerGlobalAddress(SDValue Op,
                                                SelectionDAG &DAG) const {
-  printf("lowerGlobalAddress\n");
   SDLoc DL(Op);
   const Cpu0TargetObjectFile *TLOF =
         static_cast<const Cpu0TargetObjectFile *>(

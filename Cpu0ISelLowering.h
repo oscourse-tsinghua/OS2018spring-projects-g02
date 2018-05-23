@@ -161,7 +161,6 @@ namespace llvm {
     // (add %hi(sym), %lo(sym))
     template<class NodeTy>
     SDValue getAddrNonPIC(NodeTy *N, EVT Ty, SelectionDAG &DAG) const {
-      printf("getAddrNonPIC\n");
       SDLoc DL(N);
       SDValue Hi = getTargetNode(N, Ty, DAG, Cpu0II::MO_ABS_HI);
       SDValue Lo = getTargetNode(N, Ty, DAG, Cpu0II::MO_ABS_LO);
