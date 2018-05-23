@@ -2173,7 +2173,9 @@ static void applyCpu0PcReloc(uint8_t *Loc, uint64_t V) {
 template <endianness E>
 static void writeCpu0Hi16(uint8_t *Loc, uint64_t V) {
   uint32_t Instr = read32<E>(Loc);
-  write32<E>(Loc, (Instr & 0xffff0000) | mipsHigh(V));
+  // in cpu0, ori is used to form lo16 which uses zero-extend
+  //  therefore don't have to consider bit 15 of V
+  write32<E>(Loc, (Instr & 0xffff0000));
 }
 
 template <endianness E>
