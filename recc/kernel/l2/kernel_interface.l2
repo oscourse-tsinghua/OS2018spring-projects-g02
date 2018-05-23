@@ -1,0 +1,313 @@
+OFFSET RELOCATABLE
+FUNCTION kernel_interface_start kernel_interface_end;
+IMPLEMENTS INTERNAL kernel_interface_start;
+IMPLEMENTS INTERNAL kernel_interface_end;
+REQUIRES EXTERNAL globalvar_g_current_sp;
+REQUIRES EXTERNAL globalvar_g_kernel_sp;
+IMPLEMENTS EXTERNAL task_exit;
+IMPLEMENTS EXTERNAL irq_handler;
+IMPLEMENTS EXTERNAL kernel_init;
+IMPLEMENTS EXTERNAL kernel_exit;
+IMPLEMENTS EXTERNAL release_processor;
+IMPLEMENTS EXTERNAL block_on_event;
+IMPLEMENTS EXTERNAL send_message;
+IMPLEMENTS EXTERNAL receive_message;
+IMPLEMENTS EXTERNAL reply_message;
+REQUIRES EXTERNAL k_task_exit;
+REQUIRES EXTERNAL k_irq_handler;
+REQUIRES EXTERNAL k_kernel_init;
+REQUIRES EXTERNAL k_kernel_exit;
+REQUIRES EXTERNAL k_release_processor;
+REQUIRES EXTERNAL k_block_on_event;
+REQUIRES EXTERNAL k_send_message;
+REQUIRES EXTERNAL k_receive_message;
+REQUIRES EXTERNAL k_reply_message;
+IMPLEMENTS, REQUIRES INTERNAL do_kernel_method;
+IMPLEMENTS, REQUIRES INTERNAL exit_kernel_method;
+IMPLEMENTS, REQUIRES INTERNAL irq_exit;
+IMPLEMENTS, REQUIRES INTERNAL irq_interrupt_chosen;
+IMPLEMENTS, REQUIRES INTERNAL method_exit_premption_enabled;
+IMPLEMENTS, REQUIRES INTERNAL after_kernel_method_return;
+IMPLEMENTS, REQUIRES INTERNAL after_kernel_irq_return;
+IMPLEMENTS EXTERNAL init_task_stack;
+IMPLEMENTS EXTERNAL or_into_flags_register;
+IMPLEMENTS EXTERNAL deassert_bits_in_flags_register;
+IMPLEMENTS EXTERNAL read_flags_register;
+
+kernel_interface_start:
+
+reply_message:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_reply_message;
+add r5 r5 WR;
+loa r5 r5;
+beq ZR ZR do_kernel_method;
+
+receive_message:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_receive_message;
+add r5 r5 WR;
+loa r5 r5;
+beq ZR ZR do_kernel_method;
+
+send_message:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_send_message;
+add r5 r5 WR;
+loa r5 r5;
+beq ZR ZR do_kernel_method;
+
+block_on_event:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_block_on_event;
+add r5 r5 WR;
+loa r5 r5;
+beq ZR ZR do_kernel_method;
+
+task_exit:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_task_exit;
+add r5 r5 WR;
+loa r5 r5;
+beq ZR ZR do_kernel_method;
+
+kernel_init:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_kernel_init;
+add r5 r5 WR;
+loa r5 r5;
+; all above: r5 = &k_kernel_init
+beq ZR ZR do_kernel_method;
+
+kernel_exit:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_kernel_exit;
+add r5 r5 WR;
+loa r5 r5;
+beq ZR ZR do_kernel_method;
+
+release_processor:
+add r5 PC ZR;
+beq ZR ZR 1;
+DW k_release_processor;
+add r5 r5 WR;
+loa r5 r5;
+beq ZR ZR do_kernel_method;
+
+do_kernel_method:
+ll r1 0x2;
+not r1 r1;       Create a mask to disable global interrupts
+and FR FR r1;    Apply the mask.
+;--------------- We can no longer be prempted after this point
+sub r6 FP SP;    Get bytes of arguments
+add r7 r6 ZR;    Make copy for copy counter later
+add r2 PC ZR;
+beq ZR ZR 1;
+DW method_exit_premption_enabled; We want to restore the PC right after interrupts are enabled in this method
+add r2 r2 WR;
+loa r2 r2;
+sub SP SP WR;    Increment stack pointer to store PC.
+sto SP r2;       Save PC value on stack.
+sub SP SP WR;    Increment stack pointer to store FP.
+sto SP FP;       Save Frame pointer of the task on stack
+sub SP SP WR;    Push stack to store entry method
+sto SP ZR;       Store zero to signify that task came from a kernel call
+;                ... Save other registers
+add r1 PC ZR;
+beq ZR ZR 1;
+DW globalvar_g_current_sp;  Save the current task's stack pointer
+add r1 r1 WR;
+loa r1 r1;
+sto r1 SP;       Save the current SP of the task at kernel function entry
+add r1 PC ZR;
+beq ZR ZR 1;
+DW globalvar_g_kernel_sp;  Need to switch to kernel sp now
+add r1 r1 WR;
+loa r1 r1;
+loa SP r1;       Load kernel stack pointer
+sub SP SP WR;    Inc another 4 bytes for the return address.
+add r3 PC ZR;
+beq ZR ZR 1;
+DW after_kernel_method_return;  Get PC value to return point from kernel call
+add r3 r3 WR;
+loa r3 r3;
+sto SP r3;       Store the return address.
+sub SP SP WR;    Push another 4 bytes for the frame pointer.
+sto SP ZR;       Save zero for kernel frame pointer
+beq ZR ZR 5;     Jump to test condition to copy function arguments.  Note:  arguments must be 4-byte objects
+sub FP FP WR;    Next word
+sub SP SP WR;    Next word
+loa r2 FP;       Copy the value
+sto SP r2;       Store the value
+sub r6 r6 WR;    Decrement for count of arguments copied
+beq r6 ZR 1;
+beq ZR ZR -7;    Go back and copy the next word
+add FP SP ZR;    Copy the stack pointer into the frame pointer.
+add FP FP r7;    Adjust the FP to account for the arguments we just loaded
+add PC ZR r5;    Branch to our kernel method.
+after_kernel_method_return:
+add r1 PC ZR;
+beq ZR ZR 1;
+DW globalvar_g_current_sp;  Load the current task's stack pointer location
+add r1 r1 WR;
+loa r1 r1;
+loa SP r1;       Load current task's stack pointer
+loa r1 SP;       Load the kernel scheduling method
+add SP SP WR;    Pop stack to point at FP
+beq ZR r1 exit_kernel_method;  If it came from a kernel function call, schedule it the same way
+beq ZR ZR irq_exit;   Otherwise it came from an interrupt
+
+exit_kernel_method:
+;                ... Restore other registers
+loa FP SP;       Pop Frame pointer
+add SP SP WR;    Pop task stack to point at return address
+add FR FR WR;    Add 4 to set bit 2 and return from interrupt
+;--------------- We can now be prempted again
+method_exit_premption_enabled:
+add SP FP ZR;    Set stack pointer to frame pointer to get over arguments (save because we just set the FP)
+loa FP FP;       Load the previous frame pointer
+add SP SP WR;    Jump over the frame pointer to get to the return address
+loa r1 SP;       Load the return address
+add SP SP WR;    Jump over the return address, which points at the return address space (an int)
+add PC ZR r1;    Jump back to the place where the function was called
+
+init_task_stack:
+;  SP is currently pointing to param of top argument ptr.
+loa r1 SP;       Load function address
+add SP SP WR;    Now pointing at param of task SP value
+loa r2 SP;       Load address of stack pointer of this task
+loa r3 r2;       Get the actual stack pointer variable value.
+sto r3 r1;       Store Function address
+sub r3 r3 WR;    Push
+sto r3 ZR;       Store zero for frame pointer.
+sub r3 r3 WR;    Push
+sto r3 ZR;       Store zero to signify scheduling as if from kernel call
+sto r2 r3;       We updated the stack of this task, save it
+add SP SP WR;    Align stack to get FP
+loa FP SP;       Load frame pointer
+add SP SP WR;    Jump over the frame pointer to get to the return address
+loa r1 SP;       Load the return address
+add SP SP WR;    Jump over the return address, which points at the return address space (an int)
+add PC ZR r1;    Jump back to the place where the function was called
+
+or_into_flags_register:
+loa r1 SP;       Load argument value
+or FR FR r1;     Or into flags register
+add SP SP WR;    Pop argument
+loa FP SP;       Load frame pointer
+add SP SP WR;    Jump over the frame pointer to get to the return address
+loa r1 SP;       Load the return address
+add SP SP WR;    Jump over the return address, which points at the return address space (an int)
+add PC ZR r1;    Jump back to the place where the function was called
+
+deassert_bits_in_flags_register:
+loa r1 SP;       Load argument value
+not r1 r1;       Not it to get an inverse mask
+and FR FR r1;    And into flags register to de-assert bits
+add SP SP WR;    Pop argument
+loa FP SP;       Load frame pointer
+add SP SP WR;    Jump over the frame pointer to get to the return address
+loa r1 SP;       Load the return address
+add SP SP WR;    Jump over the return address, which points at the return address space (an int)
+add PC ZR r1;    Jump back to the place where the function was called
+
+read_flags_register:
+loa FP SP;       Load frame pointer
+add SP SP WR;    Jump over the frame pointer to get to the return address
+loa r1 SP;       Load the return address
+add SP SP WR;    Jump over the return address, which points at the return address space (an int)
+sto SP FR;       Store the frame pointer as return value
+add PC ZR r1;    Jump back to the place where the function was called
+
+irq_handler:
+sub SP SP WR;    Push
+sto SP r1;
+sub SP SP WR;    Push
+sto SP r2;
+sub SP SP WR;    Push
+sto SP r3;
+sub SP SP WR;    Push
+sto SP r4;
+sub SP SP WR;    Push
+sto SP r5;
+sub SP SP WR;    Push
+sto SP r6;
+sub SP SP WR;    Push
+sto SP r7;
+sub SP SP WR;    Push
+sto SP r8;
+sub SP SP WR;    Push
+sto SP r9;
+sub SP SP WR;    Push
+sto SP FP;       Save Frame pointer of the task on stack
+sub SP SP WR;    Push stack
+sto SP WR;       Store 4 to signify that task came from an interrupt
+beq ZR ZR irq_interrupt_chosen;
+
+irq_interrupt_chosen:
+add r1 PC ZR;    Load address of variable
+beq ZR ZR 1;
+DW globalvar_g_current_sp;
+add r1 r1 WR;
+loa r1 r1;
+sto r1 SP;       Save the current SP of the task at kernel function entry
+add r1 PC ZR;    ;  Need to switch to kernel sp now
+beq ZR ZR 1;
+DW globalvar_g_kernel_sp;
+add r1 r1 WR;
+loa r1 r1;
+loa SP r1;       Load kernel stack pointer
+sub SP SP WR;    Inc another 4 bytes for the return address.
+add r3 PC ZR;
+beq ZR ZR 1;
+DW after_kernel_irq_return;  PC value to return point after irq handler
+add r3 r3 WR;
+loa r3 r3;
+sto SP r3;       Store the return address.
+sub SP SP WR;    Push another 4 bytes for the frame pointer.
+sto SP ZR;       Save zero for kernel frame pointer
+add FP SP ZR;    Copy the stack pointer into the frame pointer.
+beq ZR ZR k_irq_handler;    Branch to our kernel method.
+after_kernel_irq_return:
+add r1 PC ZR;
+beq ZR ZR 1;
+DW globalvar_g_current_sp;  Load the current task's stack pointer location
+add r1 r1 WR;
+loa r1 r1;
+loa SP r1;       Load current task's stack pointer
+loa r1 SP;
+add SP SP WR;    Pop
+beq r1 WR irq_exit;     If we're scheduling a task that came from an interrupt
+beq ZR ZR exit_kernel_method;  Happens when scheduling a task that came from kernel call
+
+irq_exit:
+loa FP SP;
+add SP SP WR;    Pop
+loa r9 SP;
+add SP SP WR;    Pop
+loa r8 SP;
+add SP SP WR;    Pop
+loa r7 SP;
+add SP SP WR;    Pop
+loa r6 SP;
+add SP SP WR;    Pop
+loa r5 SP;
+add SP SP WR;    Pop
+loa r4 SP;
+add SP SP WR;    Pop
+loa r3 SP;
+add SP SP WR;    Pop
+loa r2 SP;
+add SP SP WR;    Pop
+loa r1 SP;
+add SP SP WR;    Pop
+add FR FR WR;    Add 4 to set bit 2 and return from interrupt
+
+kernel_interface_end:

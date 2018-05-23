@@ -1,0 +1,44 @@
+#   Copyright 2016 Robert Elder Software Inc.
+#   
+#   Licensed under the Apache License, Version 2.0 (the "License"); you may not 
+#   use this file except in compliance with the License.  You may obtain a copy 
+#   of the License at
+#   
+#       http://www.apache.org/licenses/LICENSE-2.0
+#   
+#   Unless required by applicable law or agreed to in writing, software 
+#   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT 
+#   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the 
+#   License for the specific language governing permissions and limitations 
+#   under the License.
+
+An aide to help visualize how are items are layed out on the stack in the RECC compiler.
+
+
+Structure Member layout on Stack
+
++  ...   +   ...   +   ....    +
+|        |         |           |
++--------+---------+-----------+
+|0x100000|  Value  |           |       struct mystruct {
+|0x0FFFFC| Pointer |  Member_3 |           unsigned int Member_1;
++--------+---------+-----------+           unsigned int Member_2;
+|0x0FFFF8|  Value  |           |           unsigned int arr1[3];
+|0x0FFFF4| Pointer |  arr2[2]  |           unsigned int Member_3;
++--------+---------+-----------+       };
+|0x0FFFF0|  Value  |           |
+|0x0FFFEC| Pointer |  arr2[1]  |
++--------+---------+-----------+
+|0x0FFFE8|  Value  |           |
+|0x0FFFE4| Pointer |  arr1[0]  |
++--------+---------+-----------+
+|0x0FFFE0|  Value  |           |
+|0x0FFFDC| Pointer |  Member_2 |
++--------+---------+-----------+
+|0x0FFFD8|  Value  |           |
+|0x0FFFD4| Pointer |  Member_1 |<-- Top of stack
++--------+---------+-----------+
+
+-  Stacks grow down in memory.
+
+The sha1sum of the lines above is 4f2a85cfaae3cc9619eb3c29654da7b428f585e6

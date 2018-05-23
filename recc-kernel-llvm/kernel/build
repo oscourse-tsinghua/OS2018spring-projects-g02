@@ -1,0 +1,27 @@
+#!/bin/sh
+CLANG=clang
+CLANG_FLAGS="-target mips-unknown-linux-gnu -O0 -emit-llvm -I../include -isystem../libc -nostdinc -nobuiltininc"
+LLVM_BIN_DIR=../../llvm-3.9.0.src/build/bin/
+LLC=${LLVM_BIN_DIR}llc
+LLC_FLAGS="-march=cpu0el -relocation-model=static"
+BUILD_DIR=../build
+
+BUILD_FILES="main.c
+kernel_state.c
+kernel_impl.c
+user_proc.c
+queue.c
+my_printf.c
+"
+
+for fext in $BUILD_FILES
+do
+  f=${fext%.c}
+  echo "building $f"
+  ${CLANG} ${CLANG_FLAGS} -S ${f}.c -o ${BUILD_DIR}/${f}.ll
+  ${CLANG} ${CLANG_FLAGS} -c ${f}.c -o ${BUILD_DIR}/${f}.bc
+  cd ${BUILD_DIR}
+  ${LLC} ${LLC_FLAGS} -filetype=asm ${f}.bc -o ${f}.s
+  ${LLC} ${LLC_FLAGS} -filetype=obj ${f}.bc -o ${f}.o
+  cd -
+done
