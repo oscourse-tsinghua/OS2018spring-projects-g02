@@ -1,16 +1,9 @@
 #!/bin/sh
-
 CLANG=clang
 CLANG_FLAGS="-target mips-unknown-linux-gnu -O0 -emit-llvm -I../include -isystem../libc -nostdinc -nobuiltininc"
-
-# modify this to point to your llc. use absolute paths.
-LLC=/home/hob/Programs/llvm-src/llvm-3.9.0.src/build/bin-nosw/llc
+LLC=../../llc
 LLC_FLAGS="-march=cpu0el -relocation-model=static"
-LLD=/home/hob/Programs/llvm-src/llvm-3.9.0.src/build/bin-nosw/ld.lld
-
-C_EXT=".c"
-NO_EXT=""
-
+LLD=../../ld.lld
 BUILD_DIR=../build
 
 BUILD_FILES="main.c
@@ -19,7 +12,6 @@ kernel_impl.c
 user_proc.c
 queue.c
 my_printf.c
-
 "
 
 for fext in $BUILD_FILES
