@@ -1,0 +1,15 @@
+#!/bin/sh
+LLVM_BIN_DIR=../../../llvm-3.9.0.src/build/bin/
+LLAS=${LLVM_BIN_DIR}llvm-mc
+LLAS_FLAGS="-arch=cpu0el -filetype=obj"
+
+BUILD_DIR=../../build
+
+cd l2/
+BUILD_FILES=`ls *.s`
+for fext in $BUILD_FILES
+do
+  f=${fext%.s}
+  echo "building $f"
+  ${LLAS} ${LLAS_FLAGS} ${f}.s -o ${BUILD_DIR}/${f}.o
+done
