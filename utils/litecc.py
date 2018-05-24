@@ -21,7 +21,6 @@ def reg2rn(regexpr):
         assert(regexpr[0].lower() == 'r')
         n = int(regexpr[1:])
         assert(n > 0)
-        assert(n <= 10)
         return n+5
 
 def general_xyz(opcode, rx, ry, rz):
@@ -150,7 +149,7 @@ with open("inst.l2", "r") as fin, open("inst.hex", "w") as fout, open("inst.vhdl
         typ = l.strip().split()[0]
         stmt = "_" + typ + "(l.strip())"
         hex_stmt = eval(stmt)
-        print(hex_stmt, file=fout)
+        print(hex_stmt, file=fout, end='')
         for i in range(3, -1, -1):
             print("mem(%d) <= x\"%s\";" % (pc, str(hex_stmt[i * 2:(i + 1) * 2])), file = fv)
             pc += 1

@@ -61,9 +61,6 @@ begin
 
 			when ALUOP_MUL =>
 				alu_data_o <= std_logic_vector(unsigned(alu_v1_i) * unsigned(alu_v2_i))(31 downto 0);
-			
-			when ALUOP_DIV =>
-				alu_data_o <= std_logic_vector(unsigned(alu_v1_i) / unsigned(alu_v2_i));
 				
 			when ALUOP_AND =>
 				alu_data_o <= alu_v1_i and alu_v2_i;

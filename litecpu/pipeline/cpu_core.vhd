@@ -18,21 +18,47 @@ entity CPU_CORE is
 		MEMRData_i: in dword;
 		MEMWData_o: out dword;
 		
-		display_reg_o: out dword;
+/*		intMode_o: out rammode_t;
+		intAddr_o: out mem_addr_t;
+		intWData_o: out dword;
+		intRData_i: in dword;
+*/		
+		display_reg_o: out std_logic_vector(95 downto 0);
 		display_inst_o: out dword;
 		
+		IDModeTEST: out rammode_t;
+		EXModeTEST: out rammode_t;
+		
+		IFActiveTEST: out std_logic;
+		IDActiveTEST: out std_logic;
+		EXActiveTEST: out std_logic;
+		MEMActiveTEST: out std_logic;
+		
 		UART1_IN_ready_i: in std_logic;
-		UART1_OUT_ready_i: in std_logic
+		UART1_OUT_ready_i: in std_logic;
+		
+		opcodeTEST: out opcode_t;
+		
+--		irq_i: in dword;
+		reg_pcTEST: out dword;
+		reg_pc_weTEST: out std_logic
 	);
 end CPU_CORE;
 
 
 architecture behave of CPU_CORE is
 
-	signal watch_reg: dword;
+	signal watch_reg: std_logic_vector(95 downto 0);
 	
 	signal halt: std_logic;
 
+	signal reg_pc: dword;
+	signal reg_pc_we: std_logic; 
+	
+	signal reg_active: std_logic;
+	signal reg_halt: std_logic;
+	signal recover: std_logic;
+	
 	signal if_active_i: std_logic;
 	signal if_pc_o: mem_addr_t;
 	signal if_inst: inst_t;
@@ -103,8 +129,18 @@ begin
 
 	MEMMode_o <= mem_ram_mode_i;
 	MEMAddr_o <= mem_alu_data_i;
+	
+	IDModeTEST <= id_ram_mode_o;
+	EXModeTEST <= ex_ram_mode_o;
 
+	IFActiveTEST <= if_active_i;
+	IDActiveTEST <= id_active_i;
+	EXActiveTEST <= ex_active_i;
+	MEMActiveTEST <= mem_active_i;
+	
 	display_reg_o <= watch_reg;
+	reg_pcTEST <= reg_pc;
+	reg_pc_weTEST <= reg_pc_we;
 	
 	uregs:
 	entity work.REGS
@@ -125,7 +161,21 @@ begin
 		display_reg_o=> watch_reg,
 		
 		UART1_IN_ready_i => UART1_IN_ready_i,
-		UART1_OUT_ready_i => UART1_OUT_ready_i
+		UART1_OUT_ready_i => UART1_OUT_ready_i,
+		
+		pc_i => if_pc_o,
+		pc_o => reg_pc,
+		pc_we_o => reg_pc_we
+		
+--		irq_i => irq_i,
+--		reg_halt_o => reg_halt,
+--		active_o => reg_active,
+--		active_i => wb_active_i
+		
+/*		int_mode_o => intMode_o,
+		int_Addr_o => intAddr_o,
+		int_wdata_o => intWdata_o,
+		recover_o => recover*/
 	);
 
 
@@ -143,7 +193,16 @@ begin
 		jb_en_i=> wb_jb_en_i,
 		jb_pc_i=> wb_jb_pc_i,
 
-		pc_o=> if_pc_o
+		pc_o=> if_pc_o,
+		
+		pc_i=> reg_pc,
+		pc_we_i=> reg_pc_we
+		
+	/*	reg_halt_i=> reg_halt,
+		reg_active_i=> reg_active
+		
+		recover_i=> recover,
+		intRdata_i=>intRdata_i*/
 	);
 
 
@@ -190,7 +249,9 @@ begin
 		jb_en_o=> id_jb_en_o,
 
 		ram_mode_o=> id_ram_mode_o,
-		ram_wdata_o=> id_ram_wdata_o
+		ram_wdata_o=> id_ram_wdata_o,
+		
+		opcodeTEST => opcodeTEST
 	);
 
 

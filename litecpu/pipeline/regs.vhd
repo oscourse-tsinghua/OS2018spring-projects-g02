@@ -17,17 +17,33 @@ entity REGS is
 		wr_en_i: in std_logic;
 		wr_addr_i: in reg_addr_t;
 		wr_data_i: in dword;
+		 		
+		pc_i: in dword;
+		pc_we_o: out std_logic;
+		pc_o: out dword;		
 		
 		-- Deal with interrupts or exceptions --
 		halt_o: out std_logic;
 		
-		display_reg_o: out dword;
+		display_reg_o: out std_logic_vector(95 downto 0);
 		
 		UART1_IN_ready_i: in std_logic;
 		UART1_OUT_ready_i: in std_logic
+		
+--		irq_i: in dword;
+		
+		-- halt the cpu for a clk period to handle interrupt
+--		active_i: in std_logic;
+--		reg_halt_o: out std_logic;
+--	   active_o: out std_logic;
+		
+--		int_mode_o: out rammode_t;
+--		int_addr_o: out mem_addr_t;
+--		int_wdata_o: out dword;
+		
+--		recover_o: out std_logic
 	);
 end REGS;
-
 
 architecture behave of REGS is
 	-- TODO: probably fixing this bug? or feature?
@@ -45,39 +61,129 @@ architecture behave of REGS is
 	signal UART1_OUT_ready: std_logic := '0';
 	signal UART1_OUT_last_ready: std_logic := '0';
 	
+--	signal reg_halt: std_logic;
+	
+	signal pc_we: std_logic;
+	
+	signal current_sp: dword;
+	signal current_pc: dword;
+	signal recover_int: std_logic;
 begin
+	pc_o <= regs(0);
+	pc_we_o <= pc_we;
 	real_wr_addr <= wr_addr_i(4 downto 0);
 	real_r1_addr <= raddr1_i(4 downto 0);
 	real_r2_addr <= raddr2_i(4 downto 0);
 	halt_o <= regs(4)(0);
-	display_reg_o <= regs(7);
-
+	display_reg_o <=  
+	regs(4)(15 downto 8) &
+	regs(4)(7 downto 0) &
+	regs(14)(7 downto 0) & 
+	regs(13)(7 downto 0) & 
+	regs(12)(7 downto 0) &
+	regs(11)(7 downto 0) &
+	regs(10)(15 downto 8) &
+	regs(9)(7 downto 0) &
+	regs(8)(7 downto 0) &
+	regs(7)(7 downto 0) &
+	regs(6)(15 downto 8) &
+	regs(0)(7 downto 0)
+	;
+--	reg_halt_o <= reg_halt;
 	-- writing to ZR and WR will have no effect as their reads are
 	--	hardcoded
-	process (all)
+	
+	process (UART1_IN_ready_i, rst_i)
+	begin
+		if (rst_i = '1') then 
+			UART1_IN_last_ready <= '0';
+		elsif (rising_edge(UART1_IN_ready_i)) then 
+			UART1_IN_last_ready <= not UART1_IN_last_ready;
+		end if;
+	end process;
+	
+	process (UART1_OUT_ready_i, rst_i)
+	begin
+		if (rst_i = '1') then 
+			UART1_OUT_last_ready <= '0';
+		elsif (rising_edge(UART1_OUT_ready_i)) then 
+			UART1_OUT_last_ready <= not UART1_OUT_last_ready;
+		end if;
+	end process;
+
+	process (rst_i, clk_i)
 	begin
 		if (rst_i = '1') then 
 			regs(4) <= x"00000200";
-	--	elsif (rising_edge(UART1_IN_ready_i)) then
-	--		UART1_IN_last_ready <= not UART1_IN_ready;
-	--	elsif (rising_edge(UART1_OUT_ready_i)) then
-	--		UART1_OUT_last_ready <= not UART1_OUT_ready; 
+			UART1_IN_ready <= '0';
+			UART1_OUT_ready <= '1';
 		elsif (rising_edge(clk_i)) then
+/*			int_mode_o <= RAM_NOP;
+			int_addr_o <= (others=> '0');
+			int_wdata_o <= (others=> '0');
+			recover_o <= '0';
+			active_o <= '0';
+*/			if (pc_we = '1') then 
+				pc_we <= '0';
+			else 
+				regs(0) <= pc_i;
+			end if;
+/*			if ((active_i = '1') and (reg_halt = '1')) then 
+				active_o <= '1';
+				reg_halt <= '0';	
+				if (recover_int = '0') then 
+					int_mode_o <= RAM_WRITE;				
+					int_addr_o <= current_sp;
+					int_wdata_o <= current_pc;
+				else
+					int_mode_o <= RAM_READ;
+					int_addr_o <= current_sp;
+					recover_o <= '1';
+				end if;
+			end if;*/
 			if (wr_en_i = '1') then
 				regs(to_integer(unsigned(real_wr_addr))) <= wr_data_i;
+				if (real_wr_addr = "00000") then 
+					pc_we <= '1';
+				elsif ((real_wr_addr = "00100") and (wr_data_i(2) = '1')) then 
+					regs(4)(1) <= '1';
+					regs(4)(2) <= '0';
+					
+/*					current_sp <= regs(1);
+					current_pc <= regs(0);
+				regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
+*/					end if;
 			end if;
 			if (UART1_IN_last_ready /= UART1_IN_ready) then 
 				regs(4)(10) <= '1';
 				if ((regs(4)(7) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
 					regs(4)(8) <= '1';
-				end if;
+					regs(4)(1) <= '0';
+
+/*					current_sp <= regs(1);
+					current_pc <= regs(0);
+				regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
+					
+--					reg_halt <= '1';
+--					regs(0) <= irq_i;
+					pc_we <= '1';
+*/				end if;
 				UART1_IN_ready <= UART1_IN_last_ready;
 			end if;
 			if (UART1_OUT_last_ready /= UART1_OUT_ready) then
 				regs(4)(9) <= '1';
 				if ((regs(4)(5) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
 					regs(4)(6) <= '1';
-				end if;
+					regs(4)(1) <= '0';
+
+/*					current_sp <= regs(1);
+					current_pc <= regs(0);
+				regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
+						
+--					reg_halt <= '1';
+					regs(0) <= irq_i;
+					pc_we <= '1';
+*/				end if;
 				UART1_OUT_ready <= UART1_OUT_last_ready;
 			end if;
 		end if;

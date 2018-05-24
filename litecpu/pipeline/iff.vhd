@@ -18,7 +18,15 @@ entity IFF is
 		jb_pc_i: in mem_addr_t; -- jump/branch
 		jb_en_i: in std_logic;
 
-		pc_o: out mem_addr_t
+		pc_o: out mem_addr_t;
+		
+		pc_i: in mem_addr_t;
+		pc_we_i: in std_logic
+		
+/*		reg_halt_i: in std_logic;
+		reg_active_i: in std_logic;
+		recover_i: in std_logic;
+		intRdata_i: in dword*/
 	);
 end IFF;
 
@@ -27,16 +35,22 @@ architecture behave of IFF is
 begin
 	pc_o <= pc;
 
-	process (clk_i)
-	begin
-		if (rising_edge(clk_i)) then
-			active_o <= '0';
-
-			if (rst_i = '1') then
+	process (clk_i, pc_we_i, pc_i)
+ 	begin
+		if (pc_we_i) then 
+			pc <= pc_i;
+		elsif (rising_edge(clk_i)) then
+ 			active_o <= '0';
+ 
+ 			if (rst_i = '1') then
 				pc <= BOOT_PC;
 				active_o <= '1';
          elsif (halt_i = '0') then
-				if (advance_i = '1') then
+--				if (((advance_i = '1') and (reg_halt_i = '0')) or (reg_active_i = '1')) then
+				if (advance_i = '1') then 
+/*					if (recover_i = '1') then 
+						pc <= intRdata_i;
+					els*/
 					if (jb_en_i = '1') then	
 						pc <= jb_pc_i;
 					else

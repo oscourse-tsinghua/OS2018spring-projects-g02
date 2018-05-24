@@ -19,7 +19,12 @@ entity MMU is
 		MEMAddr_i: in mem_addr_t;
 		MEMRData_o: out dword;
 		MEMWData_i: in dword;
-		
+/*		
+		intMode_i: in rammode_t;
+		intAddr_i: in mem_addr_t;
+		intWData_i: in dword;
+		intRData_o: out dword;
+*/		
 		-- to RAM
 		ram_we_o: out std_logic;
 		ram_addr_o: out ram_addr_t;
@@ -45,6 +50,9 @@ entity MMU is
 		
 		UART1_IN_ready_o: out std_logic;
 		UART1_OUT_ready_o: out std_logic
+		
+		-- IRQ_HANDLER
+--		irq_o: out dword
 	);
 end MMU;
 
@@ -54,7 +62,7 @@ architecture bhv of MMU is
    signal comReadySend, comLastSend: std_logic;
    signal COMdata: std_logic_vector(31 downto 0);
 	signal COMTransmitStart1: std_logic;
-	signal COMTEST1: std_logic := '0';
+--	signal irq: dword := x"ffffff34";
 begin
 
 	-- write (happens on clk_i rising edges) (*** not a practical assump. ***)
@@ -66,30 +74,51 @@ begin
 	COMTransmitStartTEST <= COMTransmitStart1;
 	UART1_IN_ready_o <= to_std_logic(comReadyRead/=comLastRead);
 	UART1_OUT_ready_o <= (not COMTransmitBusy) and (comReadySend xor comLastSend);
-	COMTEST <= COMTEST1;
-	--	IFF
-	process (all)
-	begin
-
-
-	end process;
+	COMTEST <= '0';
 	
+--	irq_o <= x"ffffff34";
 	--	MEM && IFF
 	process (all)
 	begin
 		rdata_o <= (others=>'0');
 		ram_we_o <= '0';
 		ram_addr_o <= (others=>'0');
-		ram_wdata_o <= (others=>'0');
+		MEMRData_o <= (others=>'0');
+		rom_wdata_o <= (others=>'0');
 		
 		if(rst_i = '1') then
-			comLastRead <= '1';
+			comLastRead <= '0';
          comLastSend <= '1';
+--		elsif (intMode_i /= RAM_NOP) then 
+--			if (intAddr_i(23 downto 20) = x"3") then --it can't be COM or IRQ in IFF
+--				null;
+--			elsif (intAddr_i(31 downto 8) = x"FFFFFF") then -- logic element based ROM
+--				rom_mode_o <= intMode_i;
+--				rom_addr_o <= x"000000" & intAddr_i(7 downto 0);
+--				rom_wdata_o <= intwdata_i;
+--				intrdata_o <= rom_rdata_i;
+--			else -- RAM otherwise
+--				if (intMode_i = RAM_READ) then 
+--					ram_we_o <= '0';
+--				elsif (intMode_i = RAM_WRITE) then 
+--					ram_we_o <= '1';
+--				end if;
+--				ram_addr_o <= intAddr_i(11 downto 2);
+--				ram_wdata_o <= intWdata_i;
+--				intRdata_o <= ram_rdata_i;
+--			end if;
 		elsif (MEMMode_i /= RAM_NOP) then
 			if (MEMAddr_i(23 downto 20) = x"3") then 
+/*				if (MEMAddr_i = x"00300020") then --IRQ_HANDLER
+					if (MEMMode_i = RAM_READ) then 
+						MEMRData_o <= irq;
+					elsif (MEMMode_i = RAM_WRITE) then
+						irq <= MEMWData_i;
+					end if;
+				els*/
 				if (MEMAddr_i = x"00300010") then -- UART_IN
 					if (MEMMode_i = RAM_READ) then	-- only read the UART_IN can be allowed
-						COMData <= zero_extend(comRdata);
+						MEMRData_o <= zero_extend(comRdata);
 						if(comReadyRead /= comLastRead) then
 							comLastRead <= comReadyRead;
 						else
@@ -98,8 +127,6 @@ begin
 					end if;
 				elsif (MEMAddr_i = x"00300000") then -- UART_OUT		
 					if (MEMMode_i = RAM_WRITE) then 	-- only write the UART_OUT can be allowed
-						COMTEST1 <= '1';
-						
 						if(COMTransmitBusy = '0' and (comLastSend /= comReadySend)) then
 							COMTransmitData <= MEMWData_i(7 downto 0);
 							comLastSend <= comReadySend;
@@ -107,12 +134,13 @@ begin
 							--error
 						end if;
 					end if ;
+					
 				end if;
 			elsif (MEMAddr_i(31 downto 8) = x"FFFFFF") then -- logic element based ROM
 				rom_mode_o <= MEMMode_i;
-				rom_addr_o <= x"000000" & addr_i(7 downto 0);
-				rom_wdata_o <= wdata_i;
-				rdata_o <= rom_rdata_i;
+				rom_addr_o <= x"000000" & MEMAddr_i(7 downto 0);
+				rom_wdata_o <= MEMwdata_i;
+				MEMrdata_o <= rom_rdata_i;
 			else -- RAM otherwise
 				if (MEMMode_i = RAM_WRITE) then
 					ram_we_o <= '1';
@@ -121,11 +149,11 @@ begin
 				end if;
 				ram_addr_o <= MEMAddr_i(11 downto 2);
 				ram_wdata_o <= MEMWData_i;
-				rdata_o <= ram_rdata_i;
+				MEMrdata_o <= ram_rdata_i;
 			end if;
 	-- IFF --
 		elsif (mode_i /= RAM_NOP) then 
-			if (addr_i(23 downto 20) = x"3") then --it can't be COM in IFF
+			if (addr_i(23 downto 20) = x"3") then --it can't be COM or IRQ in IFF
 				null;
 			elsif (addr_i(31 downto 8) = x"FFFFFF") then -- logic element based ROM
 				rom_mode_o <= mode_i;

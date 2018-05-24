@@ -28,7 +28,9 @@ entity ID is
 		jb_en_o: out std_logic;
 
 		ram_mode_o: out rammode_t;
-		ram_wdata_o: out dword
+		ram_wdata_o: out dword;
+		
+		opcodeTEST: out opcode_t
 	);
 end ID;
 
@@ -65,6 +67,7 @@ begin
 
 	pc_next <= std_logic_vector(unsigned(pc_i) + 4);
 
+	opcodeTEST <= opcode;
 
 	process (all)
 	begin
@@ -120,7 +123,6 @@ begin
 		alu_op_o <= ALUOP_ADD;
 		regwr_en <= '0';
 		jb_en_o <= '0';
-		ram_mode <= RAM_NOP;
 		ram_wdata <= (others=> '0');
 
 		case opcode is
@@ -128,43 +130,42 @@ begin
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_ADD;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
 			when OPCODE_SUB =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_SUB;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 				
 			when OPCODE_MUL =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_MUL;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
-			when OPCODE_DIV =>
-				-- DIV_ZERO should be set, but FR is not supported now --
-				alu_v1_o <= reg1_data;
-				alu_v2_o <= reg2_data;
-				alu_op_o <= ALUOP_DIV;
-				regwr_en <= '1';
-				
 			when OPCODE_AND =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_AND;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
 			when OPCODE_OR =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_OR;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
 			when OPCODE_NOT =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data; -- unused, for resources
 				alu_op_o <= ALUOP_NOT;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
 			when OPCODE_LOA =>
@@ -186,12 +187,14 @@ begin
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_SHR;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
 			when OPCODE_SHL =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_SHL;
+				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
 			-- TODO: merge bxx so only 1 adder will be used
@@ -203,6 +206,7 @@ begin
 							   unsigned(pc_next) + unsigned(boffset));
 					alu_v2_o <= (others=> '0');
 				end if;
+				ram_mode <= RAM_NOP;
 
 			-- unsigned comparison here: refer to emulators
 			when OPCODE_BLT =>
@@ -213,15 +217,18 @@ begin
 							   unsigned(pc_next) + unsigned(boffset));
 					alu_v2_o <= (others=> '0');
 				end if;
+				ram_mode <= RAM_NOP;
 
 			when OPCODE_LL =>
 				alu_v1_o <= x"0000" & liimm;
 				alu_v2_o <= reg2_data;
 				alu_op_o <= ALUOP_LL;
 				regwr_en <= '1';
-
+				ram_mode <= RAM_NOP;
+				
 			when others =>
 				fatal_o <= '1';
+				ram_mode <= RAM_NOP;
 		end case;
 
 		if ((reg3_addr = REG_PC_ADDR) and (regwr_en = '1')) then

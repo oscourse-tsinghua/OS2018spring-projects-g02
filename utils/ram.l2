@@ -1,0 +1,80 @@
+ll r5 0x0200
+ll r7 0x0030
+ll r2 0x0010
+ll r10 0xffff
+shl r10 r2
+ll r11 0xfdff
+add r10 r11 r10
+shl r7 r2
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x0048
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x0065
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x006C
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x006C
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x006F
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x002C
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x0020
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x0077
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x006F
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x0072
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x006C
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x0064
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x0021
+sto r7 r8
+and FR FR r10
+and r1 r5 FR
+beq r1 ZR -2
+ll r8 0x000A
+sto r7 r8
+and FR FR r10
+ll r1 0x0001
+beq ZR ZR -1

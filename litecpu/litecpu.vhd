@@ -3,9 +3,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.consts.ALL;
 
-
 entity litecpu is
-	port (
+port (
 		clk_i: in std_logic;
 		rst_i: in std_logic;
 		led: out std_logic_vector(7 downto 0);
@@ -14,12 +13,16 @@ entity litecpu is
       rxd: in std_logic;
 		
 		led_g: out std_logic;
-		led_b: out std_logic
+		led_b: out std_logic;
+		
+		switch: in std_logic_vector(3 downto 0);
+		halt_btn: in std_logic
 	 );
 end litecpu;
 
 architecture behave of litecpu is
 	signal clk: std_logic := '0';
+	signal clk_l: std_logic;
 	signal rst: std_logic := '1';
 
 	signal addr: mem_addr_t;
@@ -32,6 +35,14 @@ architecture behave of litecpu is
 	signal MEMRData: dword;
 	signal MEMWData: dword;
 	
+	signal intMode: rammode_t;
+	signal intAddr: mem_addr_t;
+	signal intRData: dword;
+	signal intWData: dword;
+	
+	signal IDModeTEST: rammode_t;
+	signal EXModeTEST: rammode_t;
+	
 	signal rom_addr: mem_addr_t;
 	signal rom_rdata: dword;
 	signal rom_wdata: dword;
@@ -42,7 +53,7 @@ architecture behave of litecpu is
 	signal ram_wdata: dword;
 	signal ram_we: std_logic;
 	
-	signal watch_reg: dword;
+	signal watch_reg: std_logic_vector(95 downto 0);
 	signal watch_inst: dword;
 	
 	signal COMReceiveData: std_logic_vector(7 downto 0);
@@ -52,8 +63,18 @@ architecture behave of litecpu is
 	signal transmitSTARTTEST: std_logic;
 	signal COMTEST: std_logic;
 	
+	signal IFActiveTEST: std_logic;
+	signal IDActiveTEST: std_logic;
+	signal EXActiveTEST: std_logic;
+	signal MEMActiveTEST: std_logic;
+	
 	signal UART1_IN_ready: std_logic;
 	signal UART1_OUT_ready: std_logic;
+	signal opcodeTEST: opcode_t;
+	
+	signal irq: dword;
+	signal reg_pcTEST: dword;
+	signal reg_pc_weTEST: std_logic;
 	
 	
 	-- Don't know why but component must be used here
@@ -96,7 +117,12 @@ architecture behave of litecpu is
 			MEMAddr_i: in mem_addr_t;
 			MEMRData_o: out dword;
 			MEMWData_i: in dword;
-			
+	/*		
+			intMode_i: in rammode_t;
+			intAddr_i: in mem_addr_t;
+			intRData_o: out dword;
+			intWData_i: in dword;
+		*/	
 			-- to ROM
 			rom_mode_o: out rammode_t;
 			rom_addr_o: out mem_addr_t;
@@ -121,6 +147,9 @@ architecture behave of litecpu is
 			
 			UART1_IN_ready_o: out std_logic;
 			UART1_OUT_ready_o: out std_logic
+			
+			-- IRQ
+--			irq_o: out dword
 		);
 	end component;
 
@@ -161,21 +190,120 @@ architecture behave of litecpu is
 			MEMRData_i: in dword;
 			MEMWData_o: out dword;
 			
-			display_reg_o: out dword;
+/*			intMode_o: out rammode_t;
+			intAddr_o: out mem_addr_t;
+			intWData_o: out dword;
+			intRData_i: in dword;
+*/			
+			display_reg_o: out std_logic_vector(95 downto 0);
 			display_inst_o: out dword;
 			
+			IDModeTEST: out rammode_t;
+			EXModeTEST: out rammode_t;
+			
+			IFActiveTEST: out std_logic;
+			IDActiveTEST: out std_logic;
+			EXActiveTEST: out std_logic;
+			MEMActiveTEST: out std_logic;
+			
+			opcodeTEST: out opcode_t;
+			
 			UART1_IN_ready_i: in std_logic;
-			UART1_OUT_ready_i: in std_logic
+			UART1_OUT_ready_i: in std_logic;
+			
+--			irq_i: in dword;
+			reg_pcTEST: out dword;
+			reg_pc_weTEST: out std_logic
 		);
 	end component;
 
 
 begin
+/*	process (clk_i)
+	begin
+		if (rising_edge(clk_i)) then 
+			clk <= not clk;
+		end if;
+	end process;
+*/
+	rst <= not rst_i;
 	clk <= clk_i;
-	rst <= rst_i;
-
-	led <= not watch_reg(7 downto 0);
-	led_num <= watch_inst(15 downto 0);
+	
+	process (all)
+	begin
+	case switch is
+		when "0000" => 
+--			led <= not irq(7 downto 0);
+			led <= not watch_reg(7 downto 0);
+		when "0001" =>
+			led <= not watch_reg(15 downto 8);
+		when "0010" =>
+			led <= not watch_reg(23 downto 16);
+		when "0011" =>
+			led <= not watch_reg(31 downto 24);
+		when "0100" =>
+			led <= not watch_reg(39 downto 32);
+		when "0101" =>
+			led <= not watch_reg(47 downto 40);
+		when "0110" =>
+			led <= not watch_reg(55 downto 48);
+		when "0111" =>
+			led <= not watch_reg(63 downto 56);
+		when "1000" =>
+			led <= not watch_reg(71 downto 64);
+		when "1001" =>
+			led <= not watch_reg(79 downto 72);
+		when "1010" =>
+			led <= not watch_reg(87 downto 80);
+		when "1011" =>
+			led <= not watch_reg(95 downto 88);	
+		when "1100" => 
+			led <= not watch_inst(7 downto 0);
+		when "1101" => 
+			led <= not COMReceiveData(7 downto 0);
+		when "1110" => 
+			led <= x"ff";
+			case IDModeTEST is
+				when RAM_NOP =>
+					led(0) <= '0';
+				when RAM_READ =>
+					led(1) <= '0';
+				when RAM_WRITE =>
+					led(2) <= '0';
+			end case;
+			case EXModeTEST is
+				when RAM_NOP =>
+					led(3) <= '0';
+				when RAM_READ =>
+					led(4) <= '0';
+				when RAM_WRITE =>
+					led(5) <= '0';
+			end case;
+			led(6) <= not ram_we;
+			led(7) <= not reg_pc_weTEST;
+		when others =>
+			led <= x"ff";
+			case MEMMode is
+				when RAM_NOP =>
+					led(0) <= '0';
+				when RAM_READ =>
+					led(1) <= '0';
+				when RAM_WRITE =>
+					led(2) <= '0';
+			end case;
+			case rammode is
+				when RAM_NOP =>
+					led(3) <= '0';
+				when RAM_READ =>
+					led(4) <= '0';
+				when RAM_WRITE =>
+					led(5) <= '0';
+			end case;
+			led(6) <= not EXActiveTEST;
+			led(7) <= not MEMActiveTEST;
+	end case;
+	end process;
+	led_num <= watch_reg(15 downto 8) & COMTransmitData;
 	led_g <= txd;
 	led_b <= transmitSTARTTEST;
 	urom:
@@ -194,7 +322,7 @@ begin
 	RAM
 	port map (
 		address=> ram_addr,
-		clock=> clk,
+		clock=> not clk,
 		data=> ram_wdata,
 		wren=> ram_we,
 		q=> ram_rdata
@@ -203,8 +331,8 @@ begin
 	ummu:
 	MMU
 	port map (
-		rst_i => rst_i,
-		clk_i => clk_i,
+		rst_i => rst,
+		clk_i => clk,
 		mode_i=> rammode,
 		addr_i=> addr,
 		wdata_i=> wdata,
@@ -215,6 +343,11 @@ begin
 		MEMRData_o => MEMRData,
 		MEMWData_i => MEMWData,
 		
+/*		intMode_i => intMode,
+		intAddr_i => intAddr,
+		intRData_o => intRData,
+		intWData_i => intWData,
+*/		
 		rom_addr_o=> rom_addr,
 		rom_rdata_i=> rom_rdata,
 		rom_wdata_o=> rom_wdata,
@@ -235,7 +368,9 @@ begin
 		COMTEST => COMTEST,
 		
 		UART1_IN_ready_o => UART1_IN_ready,
-		UART1_OUT_ready_o => UART1_OUT_ready		
+		UART1_OUT_ready_o => UART1_OUT_ready
+		
+--		irq_o => irq
 	);
 
 	ucpu_core:
@@ -254,16 +389,35 @@ begin
 		MEMRData_i => MEMRData,
 		MEMWData_o => MEMWData,
 		
+/*		intMode_o => intMode,
+		intAddr_o => intAddr,
+		intWData_o => intWData,
+		intRData_i => intRData,
+	*/	
 		display_reg_o => watch_reg,
 		display_inst_o => watch_inst,
 		
+		IDModeTEST => IDModeTEST,
+		EXModeTEST => EXModeTEST,
+		
+		IFActiveTEST => IFActiveTEST,
+		IDActiveTEST => IDActiveTEST,
+		EXActiveTEST => EXActiveTEST,
+		MEMActiveTEST => MEMActiveTEST,
+		
+		opcodeTEST => opcodeTEST,
+		
 		UART1_IN_ready_i => UART1_IN_ready,
-		UART1_OUT_ready_i => UART1_OUT_ready	
+		UART1_OUT_ready_i => UART1_OUT_ready,
+		
+--		irq_i => irq,
+		reg_pcTEST => reg_pcTEST,
+		reg_pc_weTEST => reg_pc_weTEST
 	);
 
 	uAsyncTransmitter: component async_transmitter generic map(
        ClkFrequency => 12000000,
-       Baud => 115200
+       Baud => 9600
    )
    port map(
        clk => clk_i,
@@ -275,7 +429,7 @@ begin
       
    uAsyncReceiver: async_receiver generic map(
        ClkFrequency => 12000000,
-       Baud => 115200
+       Baud => 9600
    )
    port map(
        clk => clk_i,
