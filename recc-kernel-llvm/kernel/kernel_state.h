@@ -65,7 +65,5 @@ extern unsigned int user_proc_4_stack[STACK_SIZE];
 extern unsigned int user_proc_5_stack[STACK_SIZE];
 extern unsigned int user_proc_6_stack[STACK_SIZE];
 extern unsigned int user_proc_7_stack[STACK_SIZE];
-extern unsigned int user_proc_8_stack[STACK_SIZE];
-extern unsigned int user_proc_9_stack[STACK_SIZE];
 
 #endif

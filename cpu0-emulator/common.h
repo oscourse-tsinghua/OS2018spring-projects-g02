@@ -15,6 +15,10 @@
 
 #undef INSTR_WATCH
 
+#undef MEM_W_WATCH
+
+#undef MEM_R_WATCH
+
 #undef WATCH_DEBUG_STD_OUTPUT
 
 #define Printf(...) do { printf (__VA_ARGS__); fflush(stdout); } while (0)
