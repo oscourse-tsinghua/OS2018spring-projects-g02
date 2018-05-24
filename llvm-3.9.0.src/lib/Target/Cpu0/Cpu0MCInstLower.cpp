@@ -133,10 +133,10 @@ static void CreateMCInst(MCInst& Inst, unsigned Opc, const MCOperand& Opnd0,
 // Lower ".cpload $reg" to
 //  "lui   $gp, %hi(_gp_disp)"
 //  "addiu $gp, $gp, %lo(_gp_disp)"
-//  "addu  $gp, $gp, $t9"
+//  "addu  $gp, $gp, $t2"
 void Cpu0MCInstLower::LowerCPLOAD(SmallVector<MCInst, 4>& MCInsts) {
   MCOperand GPReg = MCOperand::createReg(Cpu0::GP);
-  MCOperand T9Reg = MCOperand::createReg(Cpu0::T9);
+  MCOperand T2Reg = MCOperand::createReg(Cpu0::T2);
   StringRef SymName("_gp_disp");
   const MCSymbol *Sym = Ctx->getOrCreateSymbol(SymName);
   const Cpu0MCExpr *MCSym;
@@ -150,7 +150,7 @@ void Cpu0MCInstLower::LowerCPLOAD(SmallVector<MCInst, 4>& MCInsts) {
 
   CreateMCInst(MCInsts[0], Cpu0::LUi, GPReg, SymHi);
   CreateMCInst(MCInsts[1], Cpu0::ORi, GPReg, GPReg, SymLo);
-  CreateMCInst(MCInsts[2], Cpu0::ADDu, GPReg, GPReg, T9Reg);
+  CreateMCInst(MCInsts[2], Cpu0::ADDu, GPReg, GPReg, T2Reg);
 }
 
 //@LowerOperand {

@@ -216,7 +216,7 @@ void Cpu0AsmPrinter::EmitFunctionBodyStart() {
     OutStreamer->EmitRawText(StringRef("\t.set\tnoreorder"));
     // Emit .cpload directive if needed.
     if (EmitCPLoad)
-      OutStreamer->EmitRawText(StringRef("\t.cpload\t$t9"));
+      OutStreamer->EmitRawText(StringRef("\t.cpload\t$t2"));
     OutStreamer->EmitRawText(StringRef("\t.set\tnomacro"));
     if (Cpu0FI->getEmitNOAT())
       OutStreamer->EmitRawText(StringRef("\t.set\tnoat"));

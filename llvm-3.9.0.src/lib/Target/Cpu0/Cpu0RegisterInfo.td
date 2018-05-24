@@ -48,7 +48,7 @@ let Namespace = "Cpu0" in {
   // caller saved
   def T0: Cpu0GPRReg<15, "t0">, DwarfRegNum<[15]>;
   def T1: Cpu0GPRReg<16, "t1">, DwarfRegNum<[16]>;
-  def T9: Cpu0GPRReg<17, "t9">, DwarfRegNum<[17]>;
+  def T2: Cpu0GPRReg<17, "t2">, DwarfRegNum<[17]>;
 }
 
 
@@ -58,7 +58,7 @@ def CPURegs : RegisterClass<"Cpu0", [i32], 32, (add
   // return values and arguments
   V0, V1, A0, A1, 
   // not preserved across procedure calls
-  T0, T1, T9,
+  T0, T1, T2,
   // callee save
   S0, S1,
   // reserved

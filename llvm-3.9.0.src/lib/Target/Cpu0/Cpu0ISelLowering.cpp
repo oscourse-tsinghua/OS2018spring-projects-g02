@@ -360,11 +360,11 @@ getOpndList(SmallVectorImpl<SDValue> &Ops,
             std::deque< std::pair<unsigned, SDValue> > &RegsToPass,
             bool IsPICCall, bool GlobalOrExternal, bool InternalLinkage,
             CallLoweringInfo &CLI, SDValue Callee, SDValue Chain) const {
-  // T9 should contain the address of the callee function if
+  // T2 should contain the address of the callee function if
   // -reloction-model=pic or it is an indirect call.
   if (IsPICCall || !GlobalOrExternal) {
-    unsigned T9Reg = Cpu0::T9;
-    RegsToPass.push_front(std::make_pair(T9Reg, Callee));
+    unsigned T2Reg = Cpu0::T2;
+    RegsToPass.push_front(std::make_pair(T2Reg, Callee));
   } else
     Ops.push_back(Callee);
 
@@ -548,7 +548,7 @@ Cpu0TargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   // direct call is) turn it into a TargetGlobalAddress/TargetExternalSymbol
   // node so that legalize doesn't hack it.
   bool IsPICCall = IsPIC; // true if calls are translated to
-                                         // jalr $t9
+                                         // jalr $t2
   bool GlobalOrExternal = false, InternalLinkage = false;
   SDValue CalleeLo;
   EVT Ty = Callee.getValueType();
