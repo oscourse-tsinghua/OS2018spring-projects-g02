@@ -2175,7 +2175,7 @@ static void writeCpu0Hi16(uint8_t *Loc, uint64_t V) {
   uint32_t Instr = read32<E>(Loc);
   // in cpu0, ori is used to form lo16 which uses zero-extend
   //  therefore don't have to consider bit 15 of V
-  write32<E>(Loc, (Instr & 0xffff0000));
+  write32<E>(Loc, (Instr & 0xffff0000) | ((V>>16) & 0xffff));
 }
 
 template <endianness E>
