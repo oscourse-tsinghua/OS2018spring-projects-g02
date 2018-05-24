@@ -41,7 +41,11 @@ entity CPU_CORE is
 		
 --		irq_i: in dword;
 		reg_pcTEST: out dword;
-		reg_pc_weTEST: out std_logic
+		reg_pc_weTEST: out std_logic;
+		
+		pcTEST: out std_logic;
+		
+		fatal_o: out std_logic
 	);
 end CPU_CORE;
 
@@ -142,11 +146,12 @@ begin
 	reg_pcTEST <= reg_pc;
 	reg_pc_weTEST <= reg_pc_we;
 	
+	fatal_o <= id_fatal_o;
 	uregs:
 	entity work.REGS
 	port map (
 		rst_i=> rst_i,
-		clk_i=> clk_i,
+		clk_i=> not clk_i,
 		halt_o => halt,
 
 		raddr1_i=> id_reg1_addr_o,
@@ -196,7 +201,9 @@ begin
 		pc_o=> if_pc_o,
 		
 		pc_i=> reg_pc,
-		pc_we_i=> reg_pc_we
+		pc_we_i=> reg_pc_we,
+		
+		pcTEST => pcTEST
 		
 	/*	reg_halt_i=> reg_halt,
 		reg_active_i=> reg_active

@@ -87,7 +87,7 @@ module async_receiver(
 	output reg RxD_endofpacket = 0  // asserted for one clock cycle when a packet has been detected (i.e. RxD_idle is going high)
 );
 
-parameter ClkFrequency = 25000000; // 25MHz
+parameter ClkFrequency = 12000000; // 25MHz
 parameter Baud = 9600;
 
 parameter Oversampling = 8;  // needs to be a power of 2

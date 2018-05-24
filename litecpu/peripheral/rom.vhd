@@ -19,7 +19,7 @@ entity ROM is
 end ROM;
 
 architecture bhv of ROM is
-	constant MEMSZ_DW: integer := 124;
+	constant MEMSZ_DW: integer := 180;
 
 	type t_mem is array(0 to MEMSZ_DW-1) of byte;
 	signal mem: t_mem;
@@ -142,6 +142,7 @@ mem(100) <= x"00";
 mem(101) <= x"00";
 mem(102) <= x"00";
 mem(103) <= x"68";
+
 
 
 		elsif (rising_edge(clk_i)) then

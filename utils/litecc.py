@@ -1,4 +1,5 @@
 ﻿# encoding: utf-8
+from __future__ import print_function
 """
 增加指令: 比如增加 add
 那么实现一个函数, 输入是 str (指令, 如 "add r1 PC PC")
@@ -153,3 +154,4 @@ with open("inst.l2", "r") as fin, open("inst.hex", "w") as fout, open("inst.vhdl
         for i in range(3, -1, -1):
             print("mem(%d) <= x\"%s\";" % (pc, str(hex_stmt[i * 2:(i + 1) * 2])), file = fv)
             pc += 1
+    print("00300000", file=fout, end='')

@@ -5,6 +5,7 @@ use work.consts.ALL;
 
 entity litecpu is
 port (
+		clk_50m: in std_logic;
 		clk_i: in std_logic;
 		rst_i: in std_logic;
 		led: out std_logic_vector(7 downto 0);
@@ -22,8 +23,11 @@ end litecpu;
 
 architecture behave of litecpu is
 	signal clk: std_logic := '0';
-	signal clk_l: std_logic;
+	signal clk_25M: std_logic;
 	signal rst: std_logic := '1';
+	
+	signal fatalTEST: std_logic := '0';
+	signal fatalled: std_logic := '0';
 
 	signal addr: mem_addr_t;
 	signal rdata: dword;
@@ -76,6 +80,8 @@ architecture behave of litecpu is
 	signal reg_pcTEST: dword;
 	signal reg_pc_weTEST: std_logic;
 	
+	signal pcTEST: std_logic;
+	
 	
 	-- Don't know why but component must be used here
 	component async_transmitter generic(
@@ -106,6 +112,7 @@ architecture behave of litecpu is
 		port (
 			rst_i: in std_logic;
 			clk_i: in std_logic;
+			clk_50m_i: in std_logic;
 		
 			-- from CPU
 			mode_i: in rammode_t;
@@ -213,24 +220,44 @@ architecture behave of litecpu is
 			
 --			irq_i: in dword;
 			reg_pcTEST: out dword;
-			reg_pc_weTEST: out std_logic
+			reg_pc_weTEST: out std_logic;
+			
+			pcTEST: out std_logic;
+			
+			fatal_o: out std_logic
 		);
 	end component;
 
 
 begin
-/*	process (clk_i)
+	/*process (clk_i)
 	begin
-		if (rising_edge(clk_i)) then 
+		if (rst = '1') then
+			clk <= '0';
+		elsif (rising_edge(clk_i)) then 
 			clk <= not clk;
 		end if;
-	end process;
-*/
+	end process;*/
+
 	rst <= not rst_i;
 	clk <= clk_i;
 	
+	process (rst,clk_50m)
+	begin
+		if (rst = '1') then 
+			clk_25m <= '0';
+		elsif (rising_edge(clk_50m)) then
+			clk_25m <= not clk_25m;
+		end if;
+	end process;
+	
 	process (all)
 	begin
+	if (rst = '1') then 
+		fatalled <= '0';
+	else 
+		fatalled <= fatalled or fatalTEST;
+	end if;
 	case switch is
 		when "0000" => 
 --			led <= not irq(7 downto 0);
@@ -279,8 +306,8 @@ begin
 				when RAM_WRITE =>
 					led(5) <= '0';
 			end case;
-			led(6) <= not ram_we;
-			led(7) <= not reg_pc_weTEST;
+			led(6) <= not clk;
+			led(7) <= not pcTEST;
 		when others =>
 			led <= x"ff";
 			case MEMMode is
@@ -322,7 +349,7 @@ begin
 	RAM
 	port map (
 		address=> ram_addr,
-		clock=> not clk,
+		clock=> clk_50m, 
 		data=> ram_wdata,
 		wren=> ram_we,
 		q=> ram_rdata
@@ -333,6 +360,7 @@ begin
 	port map (
 		rst_i => rst,
 		clk_i => clk,
+		clk_50m_i => clk_50m,
 		mode_i=> rammode,
 		addr_i=> addr,
 		wdata_i=> wdata,
@@ -412,11 +440,15 @@ begin
 		
 --		irq_i => irq,
 		reg_pcTEST => reg_pcTEST,
-		reg_pc_weTEST => reg_pc_weTEST
+		reg_pc_weTEST => reg_pc_weTEST,
+		
+		pcTEST => pcTEST,
+		
+		fatal_o => fatalTEST
 	);
 
 	uAsyncTransmitter: component async_transmitter generic map(
-       ClkFrequency => 12000000,
+       ClkFrequency => 11950000,
        Baud => 9600
    )
    port map(
@@ -428,7 +460,7 @@ begin
    );
       
    uAsyncReceiver: async_receiver generic map(
-       ClkFrequency => 12000000,
+       ClkFrequency => 11950000,
        Baud => 9600
    )
    port map(

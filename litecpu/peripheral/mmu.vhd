@@ -8,6 +8,8 @@ entity MMU is
 	port (
 		rst_i: in std_logic;
 		clk_i: in std_logic;
+		
+		clk_50m_i: in std_logic;
 	
 		-- from CPU
 		mode_i: in rammode_t;
@@ -62,6 +64,9 @@ architecture bhv of MMU is
    signal comReadySend, comLastSend: std_logic;
    signal COMdata: std_logic_vector(31 downto 0);
 	signal COMTransmitStart1: std_logic;
+	signal ramw1: std_logic;
+	signal ramw2: std_logic;
+	signal ram_we: std_logic;
 --	signal irq: dword := x"ffffff34";
 begin
 
@@ -77,14 +82,40 @@ begin
 	COMTEST <= '0';
 	
 --	irq_o <= x"ffffff34";
+
+	process (clk_i, rst_i)
+	begin
+		if (rst_i = '1') then 
+			ramw1 <= '0';
+		elsif (falling_edge(clk_i)) then 
+			ramw1 <= ramw2;
+		end if;
+	end process;
+	
+	process (clk_50m_i, rst_i)
+	begin
+		if (rst_i = '1') then
+			ramw2 <= '0';
+		elsif (rising_edge(clk_50m_i)) then
+			ram_we_o <= '0';
+			if ((ramw1 = ramw2) and ram_we = '1') then 
+				ram_we_o <= '1';
+			end if;
+			ramw2 <= not ramw1;
+		end if;
+	end process;
+	
 	--	MEM && IFF
 	process (all)
 	begin
 		rdata_o <= (others=>'0');
-		ram_we_o <= '0';
+		ram_we <= '0';
 		ram_addr_o <= (others=>'0');
 		MEMRData_o <= (others=>'0');
 		rom_wdata_o <= (others=>'0');
+		rom_mode_o <= RAM_NOP;
+		rom_addr_o <= (others=>'0');
+		ram_wdata_o <= (others=>'0');
 		
 		if(rst_i = '1') then
 			comLastRead <= '0';
@@ -143,11 +174,11 @@ begin
 				MEMrdata_o <= rom_rdata_i;
 			else -- RAM otherwise
 				if (MEMMode_i = RAM_WRITE) then
-					ram_we_o <= '1';
+					ram_we <= '1';
 				else
-					ram_we_o <= '0';
+					ram_we <= '0';
 				end if;
-				ram_addr_o <= MEMAddr_i(11 downto 2);
+				ram_addr_o <= MEMAddr_i(14 downto 2);
 				ram_wdata_o <= MEMWData_i;
 				MEMrdata_o <= ram_rdata_i;
 			end if;
@@ -161,8 +192,8 @@ begin
 				rom_wdata_o <= wdata_i;
 				rdata_o <= rom_rdata_i;
 			else -- RAM otherwise
-				ram_we_o <= '0';
-				ram_addr_o <= addr_i(11 downto 2);
+				ram_we <= '0';
+				ram_addr_o <= addr_i(14 downto 2);
 				ram_wdata_o <= wdata_i;
 				rdata_o <= ram_rdata_i;
 			end if;

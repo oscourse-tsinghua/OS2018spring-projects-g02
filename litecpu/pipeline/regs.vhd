@@ -151,8 +151,8 @@ begin
 					
 /*					current_sp <= regs(1);
 					current_pc <= regs(0);
-				regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
-*/					end if;
+					regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
+*/				end if;
 			end if;
 			if (UART1_IN_last_ready /= UART1_IN_ready) then 
 				regs(4)(10) <= '1';

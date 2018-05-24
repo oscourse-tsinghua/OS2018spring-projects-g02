@@ -10,7 +10,7 @@ package consts is
 	subtype mem_addr_t is std_logic_vector(31 downto 0);
 	subtype reg_addr_t is std_logic_vector(8 downto 0); -- 512 registers
 	subtype opcode_t is std_logic_vector(4 downto 0);
-	subtype ram_addr_t is std_logic_vector(9 downto 0);
+	subtype ram_addr_t is std_logic_vector(12 downto 0);
 
 
 	constant REG_PC_ADDR: reg_addr_t := "000000000";
