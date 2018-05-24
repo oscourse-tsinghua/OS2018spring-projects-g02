@@ -52,11 +52,12 @@ void load_elf(const char* filename, machine_t* rv)
         (vma->perm & PF_X) ? 1 : 0);
   }
 
-  // XXX: dirty hack to initialize a read / writable stack
+#ifdef LOADER_ALLOC_STACK
   add_vma(rv, STACK_POS, STACK_POS + STACK_SIZE, PF_W | PF_R);
   rv->regs[REG_SP] = STACK_POS + STACK_SIZE - 4;
-  printf("stack %08X - %08X (%d)\n",
+  printf("loader allocd stack %08X - %08X (%d)\n",
       STACK_POS, STACK_POS + STACK_SIZE, STACK_SIZE);
+#endif
   add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
   printf("mapped %08X - %08X (%d)\n",
       MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);

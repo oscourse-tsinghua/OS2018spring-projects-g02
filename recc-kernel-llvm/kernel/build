@@ -6,7 +6,7 @@ LLC=${LLVM_BIN_DIR}llc
 LLC_FLAGS="-march=cpu0el -relocation-model=static"
 BUILD_DIR=../build
 
-BUILD_FILES="main.c
+BUILD_FILES="
 kernel_state.c
 kernel_impl.c
 user_proc.c

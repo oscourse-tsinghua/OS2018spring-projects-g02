@@ -292,7 +292,7 @@ void k_kernel_init(void){
   /*  Task 0 is not really a task, it is the 'int main' that we might want to return to later for graceful exit. */
 
   new_thread(PID_INIT,
-      5, g_current_sp, (void (*)(void)) 0);
+      5, 0, (void (*)(void)) 0);
   new_thread(PID_USER_PROC_1,
       5, &user_proc_1_stack[STACK_SIZE-1], user_proc_1);
   new_thread(PID_CLOCK_COUNTER,
