@@ -28,7 +28,6 @@ void user_proc_1(void){
       printf("t -  Prints the number of simulated clock ticks since kernel start.\n");
       printf("s -  Prints the stack pointer values of each task.\n");
       printf("p -  Prints the priority of each task.\n");
-      printf("q -  Quit.\n");
     }
     entry = 0;
 	}

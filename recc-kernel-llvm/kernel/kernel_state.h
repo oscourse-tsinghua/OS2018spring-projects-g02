@@ -20,7 +20,7 @@
 #include "queue.h"
 #endif
 
-#include "../emulators/c/op-cpu.h"
+#include "op-cpu.h"
 
 #define PID_INIT 0
 #define PID_USER_PROC_1 1

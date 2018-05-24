@@ -15,7 +15,7 @@
 */
 #include "printf.h"
 #include "private_kernel_interface.h"
-#include "../emulators/c/op-cpu.h"
+#include "op-cpu.h"
 #include "fatal.h"
 
 unsigned int current_task_id = 0;
