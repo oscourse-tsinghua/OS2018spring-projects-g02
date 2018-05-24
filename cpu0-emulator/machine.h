@@ -63,9 +63,7 @@ typedef struct mm_t {
 #define E_MEM_PERM 2
 #define E_MEM_ALIGN 3
 
-#define MEMSZ_BYTES 48128
-#define MEMKST
-
+#define MEMSZ_BYTES 48384
 
 /******************************************************************************/
 // machine abstraction:

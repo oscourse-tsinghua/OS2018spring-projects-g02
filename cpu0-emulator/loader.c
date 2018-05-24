@@ -59,7 +59,7 @@ void load_elf(const char* filename, machine_t* rv)
       STACK_POS, STACK_POS + STACK_SIZE, STACK_SIZE);
 #endif
   add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
-  printf("mapped %08X - %08X (%d)\n",
+  printf("io port %08X - %08X (%d)\n",
       MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
   printf("\n\n");
 }
@@ -71,19 +71,17 @@ void load_imgz(const char* filename, machine_t* rv) {
   assert(fin);
   int n_read = fread(img, 1, MAX_IMG_SZ, fin);
   assert(n_read < MAX_IMG_SZ && "object too big!");
+  assert(n_read < MEMSZ_BYTES && "image too big for memory");
   printf("region %08X - %08X: rwx (raw)\n", 0, n_read);
-  printf("region %08X - %08X: rwx (raw)\n", n_read, 1<<23);
+  printf("region %08X - %08X: rwx (raw)\n", n_read, MEMSZ_BYTES);
 
   rv->mm.vma = NULL;
 
-  add_vma(rv, 0, 1<<23, PF_W | PF_R | PF_X); // 8 MB rwx bare ram
+  add_vma(rv, 0, MEMSZ_BYTES, PF_W | PF_R | PF_X); // 8 MB rwx bare ram
   memcpy(rv->mm.vma->data, img, n_read);
-  // horrible hack. should be included in image file
-  rv->regs[REG_PC] = 0x10bc;
-  rv->regs[REG_SP] = 0x2adf60 + 400000 - 4;
 
   add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
-  printf("mapped %08X-%08X (%d)\n",
+  printf("io port %08X-%08X (%d)\n",
       MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
   printf("\n\n");
 }
