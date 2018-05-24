@@ -4,8 +4,14 @@ SRC_DIR      := kernel
 ASMSRC_DIR   := kernel/l2
 SINCLUDE_DIR := include
 
-OBJS := kernel_impl kernel_state my_printf putchar queue user_proc\
-	entry getchar_nobusy iehandling kernel_interface putchar_busy putchar_nobusy
+# FIXME: terrible hack, placing main at 0x0 is done by specifing `entry` 
+# 	as the first one.
+# I've tried the usual .startup way to put main at 0x0, but the linker
+# 	then puts main and schedule_next_task both at 0x0
+# I've tried the input section  entry.o(.text),
+# 	but the linker does not know this command. (llvm 3.9's problem?)
+OBJS := entry kernel_impl kernel_state my_printf putchar queue user_proc\
+	getchar_nobusy iehandling kernel_interface putchar_busy putchar_nobusy
 OBJS := $(addprefix ${BUILD_DIR}/, ${OBJS})
 OBJS := $(addsuffix .o, ${OBJS})
 

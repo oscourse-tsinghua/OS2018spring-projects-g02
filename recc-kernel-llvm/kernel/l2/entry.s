@@ -1,6 +1,4 @@
-	.text
-	.section .mdebug.abiO32
-	.previous
+  .text
 
 	.globl	main
 	.p2align	2
@@ -24,7 +22,9 @@ main:
 	addiu $sp, $sp, 1020
 	# using init stack
 
-	jsub	kernel_init
+	lui	$t0, %hi(kernel_init)
+	ori	$t0, $t0, %lo(kernel_init)
+	jalr $t0
 
 	# never here, raise errno -1
 	addiu $a0, $zr, -1
