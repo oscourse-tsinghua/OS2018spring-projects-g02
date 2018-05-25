@@ -496,7 +496,7 @@ begin
 
 	uAsyncTransmitter: component async_transmitter generic map(
        ClkFrequency => 12000000,
-       Baud => 9600
+       Baud => 115200
    )
    port map(
        clk => clk_i,
@@ -508,7 +508,7 @@ begin
       
    uAsyncReceiver: async_receiver generic map(
        ClkFrequency => 12000000,
-       Baud => 9600
+       Baud => 115200
    )
    port map(
        clk => clk_i,

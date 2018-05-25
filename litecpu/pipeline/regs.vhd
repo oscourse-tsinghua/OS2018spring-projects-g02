@@ -154,26 +154,20 @@ begin
 			end if;
 			if (UART1_IN_last_ready /= UART1_IN_ready) then 
 				regs(4)(10) <= '1';
-				if ((regs(4)(7) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
-					regs(4)(8) <= '1';
+				regs(4)(8) <= '1';
 
-					assert_int <= '1';
-				end if;
 				UART1_IN_ready <= UART1_IN_last_ready;
 			end if;
 			if (UART1_OUT_last_ready /= UART1_OUT_ready) then
 				regs(4)(9) <= '1';
-				if ((regs(4)(5) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
-					regs(4)(6) <= '1';
+				regs(4)(6) <= '1';
 
-					assert_int <= '1';
-				end if;
 				UART1_OUT_ready <= UART1_OUT_last_ready;
 			end if;
 			if (active_i = '1') then 
 				if (clear_count_i = '1') then 
 					count <= x"00000000";
-				elsif ((regs(4)(3) = '1') and (regs(4)(1) <= '1') and (timer_i /= x"00000000")) then 
+				elsif ((regs(4)(3) = '1') and (regs(4)(1) = '1') and (timer_i /= x"00000000")) then 
 					count <= std_logic_vector(unsigned(count) + 1);
 					if (count = timer_i) then 
 						count <= x"00000000";
@@ -186,8 +180,13 @@ begin
 				else 
 					count <= x"00000000";
 				end if;
-				if (assert_int = '1') then 
-					assert_int <= '0';
+				if ((regs(4)(1) = '1') and (regs(4)(8) = '1') and (regs(4)(7) = '1')) then 
+					regs(18) <= regs(0);
+					regs(0) <= irq_i;
+					regs(4)(1) <= '0';
+					pc_we <= '1';
+				end if;
+				if ((regs(4)(1) = '1') and (regs(4)(5) = '1') and (regs(4)(6) = '1')) then 
 					regs(18) <= regs(0);
 					regs(0) <= irq_i;
 					regs(4)(1) <= '0';

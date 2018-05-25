@@ -9,7 +9,7 @@ def listen(seri):
 		print(seri.read(), end='')
         
 
-ser = serial.Serial('COM3', 9600)
+ser = serial.Serial('COM3', 115200)
 lis = ser
 send = ser
 
@@ -24,13 +24,13 @@ if __name__ == '__main__':
 input_format = "hex"
 while (True):
     inp = raw_input("input: ").strip()
+    st = False
     if inp.split()[0] == "file":
         with open(inp.split()[1], 'rb') as fp: 
             hex_list = ["{:02x}".format(ord(c)) for c in fp.read()]
-            print(hex_list)
             inp = ''.join(hex_list)
-    else:
-        if inp.split()[0] == "set":
+        input_format = "hex"
+    elif inp.split()[0] == "set":
             if inp.split()[1] == "input":
                 if inp.split()[2] == "hex":
                     input_format = "hex"
@@ -39,6 +39,10 @@ while (True):
                     input_format = "ascii"
                     print("change input format into ASCII")
             continue;
+    elif inp == "start":
+        inp = "00003000"
+        input_format = "hex"
+        st = True
     if input_format == "hex":
         while (len(inp) % 8 != 0):
             inp = inp + "0"
@@ -46,10 +50,12 @@ while (True):
         for j in range(0, len(inp) / 8):
             for i in range(4, 0, -1):
                 ser.write(chr(int(inp[j*8+i*2-2:j*8+i*2], 16)))
-                time.sleep(0.001)
-            time.sleep(0.001)
+                time.sleep(0.0001)
+            time.sleep(0.0001)
+        if st:
+            input_format = "ascii"
     elif input_format == "ascii":
         for ch in inp:
             ser.write(ch)
-            time.sleep(0.001)
-        time.sleep(0.001)
+            time.sleep(0.0001)
+        time.sleep(0.0001)
