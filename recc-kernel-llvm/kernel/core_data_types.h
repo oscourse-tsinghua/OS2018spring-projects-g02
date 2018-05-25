@@ -18,7 +18,7 @@
 
 #include "printf.h"
 
-#define STACK_SIZE 1024
+#define STACK_SIZE 256
 #define INIT_STACK_SIZE 256
 
 /* ensure that MAX_NUM_PROCESSES is an exponent of 2 */
