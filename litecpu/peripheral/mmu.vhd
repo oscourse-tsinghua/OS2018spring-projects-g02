@@ -32,6 +32,12 @@ entity MMU is
 		ram_addr_o: out ram_addr_t;
 		ram_rdata_i: in dword;
 		ram_wdata_o: out dword;
+		
+		-- to RAM2
+		ram2_we_o: out std_logic;
+		ram2_addr_o: out ram2_addr_t;
+		ram2_rdata_i: in dword;
+		ram2_wdata_o: out dword;
 
 		-- to ROM
 		rom_mode_o: out rammode_t;
@@ -70,7 +76,10 @@ architecture bhv of MMU is
 	signal COMTransmitStart1: std_logic;
 	signal ramw1: std_logic;
 	signal ramw2: std_logic;
+	signal ram2w1: std_logic;
+	signal ram2w2: std_logic;
 	signal ram_we: std_logic;
+	signal ram2_we: std_logic;
 	signal irq: dword;
 	signal timer: dword;
 	signal clear_count: std_logic;
@@ -100,6 +109,15 @@ begin
 		end if;
 	end process;
 	
+	process (clk_i, rst_i)
+	begin
+		if (rst_i = '1') then 
+			ram2w1 <= '0';
+		elsif (falling_edge(clk_i)) then 
+			ram2w1 <= ram2w2;
+		end if;
+	end process;
+	
 	process (clk_50m_i, rst_i)
 	begin
 		if (rst_i = '1') then
@@ -110,6 +128,19 @@ begin
 				ram_we_o <= '1';
 			end if;
 			ramw2 <= not ramw1;
+		end if;
+	end process;
+	
+	process (clk_50m_i, rst_i)
+	begin
+		if (rst_i = '1') then
+			ram2w2 <= '0';
+		elsif (rising_edge(clk_50m_i)) then
+			ram2_we_o <= '0';
+			if ((ram2w1 = ram2w2) and ram2_we = '1') then 
+				ram2_we_o <= '1';
+			end if;
+			ram2w2 <= not ram2w1;
 		end if;
 	end process;
 	
@@ -150,6 +181,9 @@ begin
 		rom_mode_o <= RAM_NOP;
 		rom_addr_o <= (others=>'0');
 		ram_wdata_o <= (others=>'0');
+		ram2_we <= '0';
+		ram2_addr_o <= (others=>'0');
+		ram2_wdata_o <= (others=>'0');
 		
 		if(rst_i = '1') then
 			comLastRead <= '0';
@@ -207,7 +241,7 @@ begin
 				rom_addr_o <= x"000000" & MEMAddr_i(7 downto 0);
 				rom_wdata_o <= MEMwdata_i;
 				MEMrdata_o <= rom_rdata_i;
-			else -- RAM otherwise
+			elsif (MEMAddr_i(31 downto 15) = x"0000" & "0") then-- RAM1
 				if (MEMMode_i = RAM_WRITE) then
 					ram_we <= '1';
 				else
@@ -216,6 +250,15 @@ begin
 				ram_addr_o <= MEMAddr_i(14 downto 2);
 				ram_wdata_o <= MEMWData_i;
 				MEMrdata_o <= ram_rdata_i;
+			elsif (MEMAddr_i(31 downto 14) = x"0000" & "10") then -- RAM2
+				if (MEMMode_i = RAM_WRITE) then
+					ram2_we <= '1';
+				else
+					ram2_we <= '0';
+				end if;
+				ram2_addr_o <= MEMAddr_i(13 downto 2);
+				ram2_wdata_o <= MEMWData_i;
+				MEMrdata_o <= ram2_rdata_i;
 			end if;
 	-- IFF --
 		elsif (mode_i /= RAM_NOP) then 
@@ -226,11 +269,16 @@ begin
 				rom_addr_o <= x"000000" & addr_i(7 downto 0);
 				rom_wdata_o <= wdata_i;
 				rdata_o <= rom_rdata_i;
-			else -- RAM otherwise
+			elsif (addr_i(31 downto 15) = x"0000" & "0") then -- RAM1
 				ram_we <= '0';
 				ram_addr_o <= addr_i(14 downto 2);
 				ram_wdata_o <= wdata_i;
 				rdata_o <= ram_rdata_i;
+			elsif (addr_i(31 downto 14) = x"0000" & "10") then -- RAM2
+				ram2_we <= '0';
+				ram2_addr_o <= addr_i(13 downto 2);
+				ram2_wdata_o <= wdata_i;
+				rdata_o <= ram2_rdata_i;
 			end if;
 		end if;
 	end process;

@@ -57,6 +57,11 @@ architecture behave of litecpu is
 	signal ram_wdata: dword;
 	signal ram_we: std_logic;
 	
+	signal ram2_addr: ram2_addr_t;
+	signal ram2_rdata: dword;
+	signal ram2_wdata: dword;
+	signal ram2_we: std_logic;
+	
 	signal watch_reg: std_logic_vector(103 downto 0);
 	signal watch_inst: dword;
 	
@@ -145,6 +150,12 @@ architecture behave of litecpu is
 			ram_rdata_i: in dword;
 			ram_wdata_o: out dword;
 			
+			-- to RAM2
+			ram2_we_o: out std_logic;
+			ram2_addr_o: out ram2_addr_t;
+			ram2_rdata_i: in dword;
+			ram2_wdata_o: out dword;
+			
 			-- COM
     		COMReceiveData: in std_logic_vector(7 downto 0);
 		   COMTransmitData: out std_logic_vector(7 downto 0);
@@ -180,6 +191,16 @@ architecture behave of litecpu is
 	component RAM is
 		port (
 			address		: IN ram_addr_t;
+			clock		: IN STD_LOGIC ;
+			data		: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+			wren		: IN STD_LOGIC ;
+			q		: OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
+		);
+	end component;
+	
+	component RAM2 is
+		port (
+			address		: IN ram2_addr_t;
 			clock		: IN STD_LOGIC ;
 			data		: IN STD_LOGIC_VECTOR (31 DOWNTO 0);
 			wren		: IN STD_LOGIC ;
@@ -362,6 +383,16 @@ begin
 		q=> ram_rdata
 	);
 	
+	uram2:
+	RAM2
+	port map (
+		address=> ram2_addr,
+		clock=> clk_50m, 
+		data=> ram2_wdata,
+		wren=> ram2_we,
+		q=> ram2_rdata
+	);
+	
 	ummu:
 	MMU
 	port map (
@@ -392,6 +423,11 @@ begin
 		ram_rdata_i=> ram_rdata,
 		ram_wdata_o=> ram_wdata,
 		ram_we_o=> ram_we,
+		
+		ram2_addr_o=> ram2_addr,
+		ram2_rdata_i=> ram2_rdata,
+		ram2_wdata_o=> ram2_wdata,
+		ram2_we_o=> ram2_we,
 		
 		COMReceiveData => COMReceiveData,
       COMTransmitData => COMTransmitData,
@@ -459,7 +495,7 @@ begin
 	);
 
 	uAsyncTransmitter: component async_transmitter generic map(
-       ClkFrequency => 11950000,
+       ClkFrequency => 12000000,
        Baud => 9600
    )
    port map(
@@ -471,7 +507,7 @@ begin
    );
       
    uAsyncReceiver: async_receiver generic map(
-       ClkFrequency => 11950000,
+       ClkFrequency => 12000000,
        Baud => 9600
    )
    port map(

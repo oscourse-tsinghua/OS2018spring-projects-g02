@@ -143,9 +143,13 @@ mem(101) <= x"ff";
 mem(102) <= x"63";
 mem(103) <= x"2c";
 mem(104) <= x"00";
-mem(105) <= x"00";
-mem(106) <= x"03";
+mem(105) <= x"02";
+mem(106) <= x"83";
 mem(107) <= x"34";
+mem(108) <= x"00";
+mem(109) <= x"00";
+mem(110) <= x"03";
+mem(111) <= x"34";
 
 		elsif (rising_edge(clk_i)) then
 			ad0 := to_integer(unsigned(addr_i));

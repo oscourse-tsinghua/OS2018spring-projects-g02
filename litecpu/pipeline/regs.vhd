@@ -156,7 +156,6 @@ begin
 				regs(4)(10) <= '1';
 				if ((regs(4)(7) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
 					regs(4)(8) <= '1';
-					regs(4)(1) <= '0';
 
 					assert_int <= '1';
 				end if;
@@ -166,7 +165,6 @@ begin
 				regs(4)(9) <= '1';
 				if ((regs(4)(5) = '1') and regs(4)(1) = '1') then	-- if interrupt is enabled, emit interrupt signal
 					regs(4)(6) <= '1';
-					regs(4)(1) <= '0';
 
 					assert_int <= '1';
 				end if;
@@ -192,6 +190,7 @@ begin
 					assert_int <= '0';
 					regs(18) <= regs(0);
 					regs(0) <= irq_i;
+					regs(4)(1) <= '0';
 					pc_we <= '1';
 				end if;
 			end if;
