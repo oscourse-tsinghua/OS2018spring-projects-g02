@@ -230,7 +230,7 @@ void exec_inst(machine_t* m, uint32_t inst)
       break;
     case OPCODE_JALR:
       m->regs[REG_LR] = m->regs[REG_PC];
-      m->regs[REG_PC] = m->regs[ry];
+      m->regs[REG_PC] = m->regs[rx];
       break;
     case OPCODE_JSUB:
       m->regs[REG_LR] = m->regs[REG_PC];
