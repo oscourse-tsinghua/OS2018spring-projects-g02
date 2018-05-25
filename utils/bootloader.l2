@@ -1,27 +1,27 @@
 ll r5 0x0400
 ll r7 0x0030
 ll r2 0x0010
-shl r7 r2
+shl r7 r7 r2
 add r8 r7 r2
 add r4 ZR ZR
 ll r12 0xFFFF
-shl r12 r2
+shl r12 r12 r2
 ll r13 0xFBFF
 add r13 r13 r12
 ;loop
 add r6 ZR ZR
 ll r3 0x0000
 and r1 r5 FR
-beq r1 ZR -2
+beq r1 ZR -8
 loa r9 r8
 and FR FR r13
-shl r6 WR
-shl r6 WR
+shl r6 r6 WR
+shl r6 r6 WR
 add r6 r6 r9
 add r3 r3 WR
-blt r3 r2 -9
-beq r6 r7 3
-sto r4 r6 
+blt r3 r2 -36
+beq r6 r7 12
+sto r6 r4
 add r4 r4 WR
-beq ZR ZR -15
+beq ZR ZR -60
 ll PC 0x0000

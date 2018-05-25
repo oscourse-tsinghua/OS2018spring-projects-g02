@@ -75,6 +75,7 @@ architecture behave of CPU_CORE is
 	signal id_reg2_data_i: dword;
 	signal id_regwr_addr_o: reg_addr_t;
 	signal id_regwr_en_o: std_logic;
+	signal id_mod_lr_o: std_logic;
 	signal id_active_i: std_logic;
 	signal id_pc_i: mem_addr_t;
 	signal id_inst_i: inst_t;
@@ -92,9 +93,11 @@ architecture behave of CPU_CORE is
 	signal ex_alu_op_i: alu_op_t;
 	signal ex_regwr_addr_i: reg_addr_t;
 	signal ex_regwr_en_i: std_logic;
+	signal ex_mod_lr_i: std_logic;
 	signal ex_fatal_o: std_logic;
 	signal ex_regwr_en_o: std_logic;
 	signal ex_regwr_addr_o: reg_addr_t;
+	signal ex_mod_lr_o: std_logic;
 	signal ex_alu_data_o: dword;
 	signal ex_jb_en_i: std_logic;
 	signal ex_jb_en_o: std_logic;
@@ -107,10 +110,12 @@ architecture behave of CPU_CORE is
 	signal mem_active_i: std_logic;
 	signal mem_regwr_en_i: std_logic;
 	signal mem_regwr_addr_i: reg_addr_t;
+	signal mem_mod_lr_i: std_logic;
 	signal mem_alu_data_i: dword;
 	signal mem_fatal_o: std_logic;
 	signal mem_regwr_addr_o: reg_addr_t;
 	signal mem_regwr_en_o: std_logic;
+	signal mem_mod_lr_o: std_logic;
 	signal mem_regwr_data_o: dword;
 	signal mem_jb_en_i: std_logic;
 	signal mem_jb_pc_i: mem_addr_t;
@@ -120,6 +125,7 @@ architecture behave of CPU_CORE is
 	signal wb_regwr_en_i: std_logic;
 	signal wb_regwr_addr_i: reg_addr_t;
 	signal wb_regwr_data_i: dword;
+	signal wb_mod_lr_i: std_logic;
 	signal wb_active_i: std_logic;
 	signal wb_jb_en_i: std_logic;
 	signal wb_jb_pc_i: mem_addr_t;
@@ -164,6 +170,7 @@ begin
 		wr_en_i=> wb_active_i and wb_regwr_en_i, -- only when active
 		wr_addr_i=> wb_regwr_addr_i,
 		wr_data_i=> wb_regwr_data_i,
+		mod_lr_i => wb_mod_lr_i and wb_active_i,
 		
 		display_reg_o=> watch_reg,
 		
@@ -256,6 +263,7 @@ begin
 
 		regwr_addr_o=> id_regwr_addr_o,
 		regwr_en_o=> id_regwr_en_o,
+		mod_lr_o=> id_mod_lr_o,
 
 		jb_en_o=> id_jb_en_o,
 
@@ -281,6 +289,7 @@ begin
 		alu_op_i=> id_alu_op_o,
 		regwr_addr_i=> id_regwr_addr_o,
 		regwr_en_i=> id_regwr_en_o,
+		mod_lr_i=> id_mod_lr_o,
 		jb_en_i=> id_jb_en_o,
 
 		alu_v1_o=> ex_alu_v1_i,
@@ -288,6 +297,7 @@ begin
 		alu_op_o=> ex_alu_op_i,
 		regwr_addr_o=> ex_regwr_addr_i,
 		regwr_en_o=> ex_regwr_en_i,
+		mod_lr_o=> ex_mod_lr_i,
 
 		jb_en_o=> ex_jb_en_i,
 
@@ -311,6 +321,8 @@ begin
 		regwr_en_o=> ex_regwr_en_o,
 		regwr_addr_i=> ex_regwr_addr_i,
 		regwr_addr_o=> ex_regwr_addr_o,
+		mod_lr_i=> ex_mod_lr_i,
+		mod_lr_o=> ex_mod_lr_o,
 
 		alu_data_o=> ex_alu_data_o,
 
@@ -337,12 +349,14 @@ begin
 
 		regwr_en_i=> ex_regwr_en_o,
 		regwr_addr_i=> ex_regwr_addr_o,
+		mod_lr_i=> ex_mod_lr_o,
 		alu_data_i=> ex_alu_data_o,
 		jb_en_i=> ex_jb_en_o,
 		jb_pc_i=> ex_jb_pc_o,
 
 		regwr_en_o=> mem_regwr_en_i,
 		regwr_addr_o=> mem_regwr_addr_i,
+		mod_lr_o=> mem_mod_lr_i,
 		alu_data_o=> mem_alu_data_i,
 
 		jb_en_o=> mem_jb_en_i,
@@ -368,6 +382,8 @@ begin
 		regwr_en_i=> mem_regwr_en_i,
 		regwr_en_o=> mem_regwr_en_o,
 		regwr_data_o=> mem_regwr_data_o,
+		mod_lr_i=> mem_mod_lr_i,
+		mod_lr_o=> mem_mod_lr_o,
 
 		ram_mode_i=> mem_ram_mode_i,
 		ramRData_i=> MEMRData_i
@@ -387,12 +403,14 @@ begin
 		regwr_addr_i=> mem_regwr_addr_o,
 		regwr_en_i=> mem_regwr_en_o,
 		regwr_data_i=> mem_regwr_data_o,
+		mod_lr_i=> mem_mod_lr_o,
 		jb_en_i=> mem_jb_en_i,
 		jb_pc_i=> mem_jb_pc_i,
 
 		regwr_addr_o=> wb_regwr_addr_i,
 		regwr_en_o=> wb_regwr_en_i,
 		regwr_data_o=> wb_regwr_data_i,
+		mod_lr_o=> wb_mod_lr_i,
 		jb_en_o=> wb_jb_en_i,
 		jb_pc_o=> wb_jb_pc_i
 	);

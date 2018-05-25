@@ -24,6 +24,7 @@ entity ID is
 
 		regwr_addr_o: out reg_addr_t;
 		regwr_en_o: out std_logic;
+		mod_lr_o: out std_logic;
 
 		jb_en_o: out std_logic;
 
@@ -40,7 +41,7 @@ architecture behave of ID is
 	signal r1_addr: reg_addr_t;
 	signal r2_addr: reg_addr_t;
 	signal r3_addr: reg_addr_t;
-	signal boffset: mem_addr_t; -- branch offset
+	signal boffset: std_logic_vector(25 downto 0); -- branch offset
 	signal pc_next: mem_addr_t; -- i.e. pc+4
 	signal liimm: std_logic_vector(15 downto 0);  -- imm of load imm
 	signal ram_mode: rammode_t;
@@ -58,11 +59,11 @@ begin
 	ram_mode_o <= ram_mode;
 	ram_wdata_o <= ram_wdata;
 
-	opcode <= inst_i(31 downto 27);
-	r3_addr <= inst_i(26 downto 18);
-	r1_addr <= inst_i(17 downto 9);
-	r2_addr <= inst_i(8 downto 0);
-	boffset <= sign_extend(r2_addr)(29 downto 0) & "00";
+	opcode <= inst_i(31 downto 26);
+	r3_addr <= inst_i(25 downto 21);
+	r1_addr <= inst_i(20 downto 16);
+	r2_addr <= inst_i(15 downto 11);
+	boffset <= inst_i(25 downto 0);
 	liimm <= inst_i(15 downto 0);
 
 	pc_next <= std_logic_vector(unsigned(pc_i) + 4);
@@ -71,14 +72,19 @@ begin
 
 	process (all)
 	begin
-		if (opcode = OPCODE_SHR or opcode = OPCODE_SHL
-				or OPCODE = OPCODE_BEQ or OPCODE = OPCODE_BLT) then
+		if (OPCODE = OPCODE_BEQ or OPCODE = OPCODE_BLT or OPCODE = OPCODE_BNE) then
 			reg1_addr <= r3_addr;
 			reg2_addr <= r1_addr;
 		elsif (opcode = OPCODE_STO) then
 			-- TODO: why here?
 			reg1_addr <= r1_addr;
 			reg2_addr <= r3_addr;
+		elsif (opcode = OPCODE_JR or OPCODE = OPCODE_JALR) then 
+			reg1_addr <= r3_addr;
+			reg2_addr <= r1_addr;
+		elsif (opcode = OPCODE_JSUB) then 
+			reg1_addr <= "00000";
+			reg2_addr <= r2_addr;
 		else
 			reg1_addr <= r1_addr;
 			reg2_addr <= r2_addr;
@@ -93,25 +99,8 @@ begin
 	regwr_en_o <= regwr_en;
 
 
-	-- if we read from PC we don't actually read from REGS(0)
-	process (all)
-	begin
-		if (reg1_addr = REG_PC_ADDR) then
-			reg1_data <= pc_next;
-		else
-			reg1_data <= reg1_data_i;
-		end if;
-	end process;
-
-
-	process (all)
-	begin
-		if (reg2_addr = REG_PC_ADDR) then
-			reg2_data <= pc_next;
-		else
-			reg2_data <= reg2_data_i;
-		end if;
-	end process;
+	reg1_data <= reg1_data_i;
+	reg2_data <= reg2_data_i;
 
 
 	process (all)
@@ -124,6 +113,7 @@ begin
 		regwr_en <= '0';
 		jb_en_o <= '0';
 		ram_wdata <= (others=> '0');
+		mod_lr_o <= '0';
 
 		case opcode is
 			when OPCODE_ADD =>
@@ -161,26 +151,26 @@ begin
 				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
-			when OPCODE_NOT =>
+			when OPCODE_XOR =>
 				alu_v1_o <= reg1_data;
 				alu_v2_o <= reg2_data; -- unused, for resources
-				alu_op_o <= ALUOP_NOT;
+				alu_op_o <= ALUOP_XOR;
 				ram_mode <= RAM_NOP;
 				regwr_en <= '1';
 
 			when OPCODE_LOA =>
 				alu_v1_o <= reg1_data;
-				alu_v2_o <= reg2_data;
+				alu_v2_o <= x"0000" & liimm;
 				alu_op_o <= ALUOP_LOA;
 				ram_mode <= RAM_READ;
 				regwr_en <= '1';
 
 			when OPCODE_STO =>
 				alu_v1_o <= reg1_data;
-				alu_v2_o <= reg2_data;
+				alu_v2_o <= x"0000" & liimm;
 				alu_op_o <= ALUOP_STO;
 				ram_mode <= RAM_WRITE;
-				ram_wdata <= reg1_data;
+				ram_wdata <= reg2_data;
 				regwr_en <= '0';
 
 			when OPCODE_SHR =>
@@ -203,7 +193,7 @@ begin
 					jb_en_o <= '1';
 					alu_op_o <= ALUOP_ADD;
 					alu_v1_o <= std_logic_vector(
-							   unsigned(pc_next) + unsigned(boffset));
+							   unsigned(pc_next) + unsigned(sign_extend(liimm)));
 					alu_v2_o <= (others=> '0');
 				end if;
 				ram_mode <= RAM_NOP;
@@ -214,18 +204,63 @@ begin
 					jb_en_o <= '1';
 					alu_op_o <= ALUOP_ADD;
 					alu_v1_o <= std_logic_vector(
-							   unsigned(pc_next) + unsigned(boffset));
+							   unsigned(pc_next) + unsigned(sign_extend(liimm)));
 					alu_v2_o <= (others=> '0');
 				end if;
 				ram_mode <= RAM_NOP;
 
-			when OPCODE_LL =>
-				alu_v1_o <= x"0000" & liimm;
-				alu_v2_o <= reg2_data;
-				alu_op_o <= ALUOP_LL;
-				regwr_en <= '1';
+			when OPCODE_BNE =>
+				if (reg1_data /= reg2_data) then 
+					jb_en_o <= '1';
+					alu_op_o <= ALUOP_ADD;
+					alu_v1_o <= std_logic_vector(
+							   unsigned(pc_next) + unsigned(sign_extend(liimm)));
+					alu_v2_o <= (others=> '0');
+				end if;
 				ram_mode <= RAM_NOP;
 				
+			when OPCODE_JR =>
+				jb_en_o <= '1';
+				alu_op_o <= ALUOP_ADD;
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= (others => '0');
+				ram_mode <= RAM_NOP;
+				
+			when OPCODE_ADDIU =>
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= sign_extend(liimm);
+				alu_op_o <= ALUOP_ADD;
+				ram_mode <= RAM_NOP;
+				regwr_en <= '1';
+			
+			when OPCODE_LUI =>
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= liimm & x"0000";
+				alu_op_o <= ALUOP_LUI;
+				ram_mode <= RAM_NOP;
+				regwr_en <= '1';
+				
+			when OPCODE_ORI =>
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= x"0000" & liimm;
+				alu_op_o <= ALUOP_OR;
+				ram_mode <= RAM_NOP;
+				regwr_en <= '1';
+				
+			when OPCODE_JALR =>
+				alu_v1_o <= reg1_data;
+				alu_v2_o <= x"00000000";
+				alu_op_o <= ALUOP_ADD;
+				ram_mode <= RAM_NOP;
+				mod_lr_o <= '1';
+				
+			when OPCODE_JSUB =>
+				alu_v1_o <= pc_next;
+				alu_v2_o <= sign_extend(boffset);
+				alu_op_o <= ALUOP_ADD;
+				ram_mode <= RAM_NOP;
+				mod_lr_o <= '1';
+			
 			when others =>
 				fatal_o <= '1';
 				ram_mode <= RAM_NOP;

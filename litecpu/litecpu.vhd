@@ -313,7 +313,7 @@ begin
 				when RAM_WRITE =>
 					led(5) <= '0';
 			end case;
-			led(6) <= not clk;
+			led(6) <= not fatalled;
 			led(7) <= not pcTEST;
 		when others =>
 			led <= x"ff";

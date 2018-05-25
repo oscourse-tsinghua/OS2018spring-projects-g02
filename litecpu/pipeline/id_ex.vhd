@@ -21,6 +21,7 @@ entity ID_EX is
 
 		regwr_addr_i: in reg_addr_t;
 		regwr_en_i: in std_logic;
+		mod_lr_i: in std_logic;
 
 		jb_en_i: in std_logic;
 
@@ -35,7 +36,8 @@ entity ID_EX is
 
 		regwr_addr_o: out reg_addr_t;
 		regwr_en_o: out std_logic;
-
+		mod_lr_o: out std_logic;
+		
 		jb_en_o: out std_logic;
 
 		ram_mode_o: out rammode_t;
@@ -58,6 +60,7 @@ begin
 
 					regwr_addr_o <= (others=> '0');
 					regwr_en_o <= '0';
+					mod_lr_o <= '0';
 
 					active_o <= '0';
 
@@ -73,6 +76,7 @@ begin
 
 					regwr_addr_o <= regwr_addr_i;
 					regwr_en_o <= regwr_en_i;
+					mod_lr_o <= mod_lr_i;
 
 					jb_en_o <= jb_en_i;
 

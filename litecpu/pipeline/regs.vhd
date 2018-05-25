@@ -17,6 +17,7 @@ entity REGS is
 		wr_en_i: in std_logic;
 		wr_addr_i: in reg_addr_t;
 		wr_data_i: in dword;
+		mod_lr_i: in std_logic;
 		 		
 		pc_i: in dword;
 		pc_we_o: out std_logic;
@@ -48,9 +49,7 @@ entity REGS is
 end REGS;
 
 architecture behave of REGS is
-	-- TODO: probably fixing this bug? or feature?
-	-- pretend there are 512 registers when there are only 32
-	type t_reg_regs is array(32 downto 0) of dword;
+	type t_reg_regs is array(31 downto 0) of dword;
 	signal regs: t_reg_regs;
 
 	-- real address: the lowest 5 bit of expected address
@@ -135,7 +134,11 @@ begin
 			else 
 				regs(0) <= pc_i;
 			end if;
-			if (wr_en_i = '1') then
+			if (mod_lr_i = '1') then
+				regs(7) <= std_logic_vector(unsigned(regs(0)) + 4);
+				regs(0) <= wr_data_i;
+				pc_we <= '1';
+			elsif (wr_en_i = '1') then
 				regs(to_integer(unsigned(real_wr_addr))) <= wr_data_i;
 				if (real_wr_addr = "00000") then 
 					pc_we <= '1';

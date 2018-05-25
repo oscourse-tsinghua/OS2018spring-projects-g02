@@ -1,6 +1,6 @@
 ll r2 0x0030
 ll r1 0x0010
-shl r2 r1
+shl r2 r2 r1
 ll r3 0x0020
 add r2 r2 r3
 ;now r2 = irq_addr(0x00300020)
