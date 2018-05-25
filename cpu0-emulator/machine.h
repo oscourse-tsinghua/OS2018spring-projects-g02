@@ -39,8 +39,8 @@ typedef uint32_t reg_t[NUM_REGS];
 
 #define UART1_OUT 0x300000
 #define UART1_IN 0x300010
-#define IRQ_HANDLER 0x300020
-#define TIMER_PERIOD 0x300030
+#define IRQ_HANDLER 0xc0ffee00
+#define TIMER_PERIOD 0x0c0ffee0
 
 
 /******************************************************************************/

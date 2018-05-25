@@ -61,6 +61,12 @@ void load_elf(const char* filename, machine_t* rv)
   add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
   printf("io port %08X - %08X (%d)\n",
       MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
+  add_vma(rv, 0xc0ffee00, 0xc0ffee04, PF_W | PF_R);
+  printf("io port %08X - %08X (%d)\n",
+      MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
+  add_vma(rv, 0x0c0ffee0, 0x0c0ffee4, PF_W | PF_R);
+  printf("io port %08X - %08X (%d)\n",
+      MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
   printf("\n\n");
 }
 
@@ -82,6 +88,12 @@ void load_imgz(const char* filename, machine_t* rv) {
 
   add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
   printf("io port %08X-%08X (%d)\n",
+      MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
+  add_vma(rv, 0xc0ffee00, 0xc0ffee04, PF_W | PF_R);
+  printf("io port %08X - %08X (%d)\n",
+      MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
+  add_vma(rv, 0x0c0ffee0, 0x0c0ffee4, PF_W | PF_R);
+  printf("io port %08X - %08X (%d)\n",
       MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
   printf("\n\n");
 }
