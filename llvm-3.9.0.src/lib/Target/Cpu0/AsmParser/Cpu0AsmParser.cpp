@@ -506,7 +506,7 @@ int Cpu0AsmParser::matchRegisterName(StringRef Name) {
 
       .Case("t0",  Cpu0::T0)
       .Case("t1",  Cpu0::T1)
-      .Case("t9",  Cpu0::T9)
+      .Case("t2",  Cpu0::T2)
 
       .Default(-1);
 

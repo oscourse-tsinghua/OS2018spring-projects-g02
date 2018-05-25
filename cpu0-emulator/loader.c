@@ -1,12 +1,13 @@
 #include "loader.h"
 #include <string.h>
 
+static uint8_t img[MAX_IMG_SZ];
+
 void load_elf(const char* filename, machine_t* rv)
 {
   // load object into memory
   FILE* fin = fopen(filename, "r");
   assert(fin);
-  static uint8_t img[MAX_IMG_SZ];
   assert(fread(img, 1, MAX_IMG_SZ, fin) < MAX_IMG_SZ && "object too big!");
 
   rv->mm.vma = NULL;
@@ -44,22 +45,59 @@ void load_elf(const char* filename, machine_t* rv)
         pheader->p_vaddr + pheader->p_memsz,
         pheader->p_flags & VMA_PERM_MASK);
     memcpy(vma->data, img + pheader->p_offset, pheader->p_filesz);
-    printf("region %08X - %08x (%d): rwx=%d%d%d\n",
+    printf("region %08X - %08X (%d): rwx=%d%d%d\n",
         vma->begin, vma->end, pheader->p_memsz,
         (vma->perm & PF_R) ? 1 : 0,
         (vma->perm & PF_W) ? 1 : 0,
         (vma->perm & PF_X) ? 1 : 0);
   }
 
-  // XXX: dirty hack to initialize a read / writable stack
+#ifdef LOADER_ALLOC_STACK
   add_vma(rv, STACK_POS, STACK_POS + STACK_SIZE, PF_W | PF_R);
-  printf("stack %08X-%08X (%d)\n",
+  rv->regs[REG_SP] = STACK_POS + STACK_SIZE - 4;
+  printf("loader allocd stack %08X - %08X (%d)\n",
       STACK_POS, STACK_POS + STACK_SIZE, STACK_SIZE);
+#endif
   add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
-  printf("mapped %08X-%08X (%d)\n",
+  printf("io port %08X - %08X (%d)\n",
       MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
   printf("\n\n");
 }
 
 
+void load_imgz(const char* filename, machine_t* rv) {
+  // load object into memory
+  FILE* fin = fopen(filename, "r");
+  assert(fin);
+  int n_read = fread(img, 1, MAX_IMG_SZ, fin);
+  assert(n_read < MAX_IMG_SZ && "object too big!");
+  assert(n_read < MEMSZ_BYTES && "image too big for memory");
+  printf("region %08X - %08X: rwx (raw)\n", 0, n_read);
+  printf("region %08X - %08X: rwx (raw)\n", n_read, MEMSZ_BYTES);
+
+  rv->mm.vma = NULL;
+
+  add_vma(rv, 0, MEMSZ_BYTES, PF_W | PF_R | PF_X); // 8 MB rwx bare ram
+  memcpy(rv->mm.vma->data, img, n_read);
+
+  add_vma(rv, MAPPED_POS, MAPPED_POS + MAPPED_SIZE, PF_W | PF_R);
+  printf("io port %08X-%08X (%d)\n",
+      MAPPED_POS, MAPPED_POS + MAPPED_SIZE, MAPPED_SIZE);
+  printf("\n\n");
+}
+
+
+void load_auto(unsigned load_type, const char* filename, machine_t* rv)
+{
+  switch (load_type) {
+    case FILETYPE_ELF:
+      load_elf(filename, rv);
+      break;
+    case FILETYPE_IMGZ:
+      load_imgz(filename, rv);
+      break;
+    default:
+      assert(0 && "bad load type");
+  }
+}
 

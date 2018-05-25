@@ -30,7 +30,7 @@ reply_message:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -77,7 +77,7 @@ receive_message:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -124,7 +124,7 @@ send_message:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -171,7 +171,7 @@ block_on_event:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -216,7 +216,7 @@ task_exit:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -260,7 +260,7 @@ kernel_init:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -304,7 +304,7 @@ kernel_exit:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -348,7 +348,7 @@ release_processor:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -386,7 +386,7 @@ do_kernel_method:
   addiu $t0, $zr, -3  # -3 = ~2
   and $fr, $fr, $t0   # 关中断
 
-  add $t9, $sp, $zr   # current 栈 SP 保存在 t9 中, 用于复制参数
+  add $t2, $sp, $zr   # current 栈 SP 保存在 t2 中, 用于复制参数
 # 保存 current 栈
 # 注意, 当我们返回到 current 栈是希望栈顶就是返回地址
   addiu $t1, $a0, 0
@@ -420,15 +420,15 @@ do_kernel_method:
 #
 # XXX: 现在不支持超过三个参数的系统函数!
 #
-#   $t9: current 栈, $sp: kernel 栈
+#   $t2: current 栈, $sp: kernel 栈
   addiu $sp, $sp, -12
   addiu $a0, $zr, 3
   blt $t0, $a0, $lbl3
-  loa $a0, 12($t9)
+  loa $a0, 12($t2)
   sto $a0, 8($sp)
 $lbl3:
-  loa $a0, 4($t9)
-  loa $a1, 8($t9)
+  loa $a0, 4($t2)
+  loa $a1, 8($t2)
   jalr $t1
 
 # ...
@@ -474,7 +474,7 @@ irq_handler:
   sto $s1, 20($sp)
   sto $t0, 24($sp)
   sto $t1, 28($sp)
-  sto $t9, 32($sp)
+  sto $t2, 32($sp)
   sto $fp, 36($sp)
   sto $lr, 40($sp)
 
@@ -510,7 +510,7 @@ do_eret:
   loa $s1, 20($sp)
   loa $t0, 24($sp)
   loa $t1, 28($sp)
-  loa $t9, 32($sp)
+  loa $t2, 32($sp)
   loa $fp, 36($sp)
   loa $lr, 40($sp)
   addiu $sp, $sp, 44

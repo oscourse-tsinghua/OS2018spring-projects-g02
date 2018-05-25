@@ -28,6 +28,9 @@ int mem_write(machine_t* m, uint32_t addr, uint32_t val)
       }
 #endif
       *(uint32_t*) &(vma->data[addr - vma->begin]) = val;
+#ifdef MEM_W_WATCH
+      Printf("> mem write [%08X]=%08X\n", addr, val);
+#endif
       return 0;
     }
     vma = vma->next;
@@ -57,6 +60,9 @@ int mem_read(machine_t* m, uint32_t addr, uint32_t* rv)
       }
 #endif
       *rv = *(uint32_t*) &(vma->data[addr - vma->begin]);
+#ifdef MEM_R_WATCH
+      Printf("> mem read [%08X] -> %08X\n", addr, *rv);
+#endif
       return 0;
     }
     vma = vma->next;

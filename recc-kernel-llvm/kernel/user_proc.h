@@ -16,15 +16,10 @@
     under the License.
 */
 
-#ifndef QUEUE_H_DEFINED_
 #include "queue.h"
-#endif
-#ifndef PUBLIC_KERNEL_INTERFACE_H_
 #include "public_kernel_interface.h"
-#endif
-#ifndef ASSERT_H_DEFINED_
-#include <assert.h>
-#endif
+#include "fatal.h"
+
 
 int do_compile(void);
 void user_proc_1(void);

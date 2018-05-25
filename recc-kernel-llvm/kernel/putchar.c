@@ -14,7 +14,7 @@
     under the License.
 */
 #include "public_kernel_interface.h"
-#include <assert.h>
+#include "fatal.h"
 
 int putchar(int);
 int putchar_nobusy(int);
@@ -29,8 +29,8 @@ int putchar(int c){
 		case MESSAGE_ACKNOWLEDGED:{
 			break;
 		}default:{
-			assert(0 && "Unknown message type.\n");
-		}
-	}
-        return 0;
+      fatal(1); // Unknown message type.
+    }
+  }
+  return 0;
 }

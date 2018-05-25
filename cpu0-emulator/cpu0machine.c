@@ -5,17 +5,16 @@
 #include <assert.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
 
 uint32_t excep = 0;
 
 void machine_init(machine_t* m)
 {
   memset(m, 0, sizeof(*m));
-  m->regs[REG_FR] = 0x200; // TODO: FR
+  m->regs[REG_FR] = 0x200;
   m->regs[REG_WR] = 4;
   m->regs[REG_ZR] = 0;
-
-  m->regs[REG_SP] = STACK_POS + STACK_SIZE - 4;
 
   m->cycno = 0;
 }
@@ -254,6 +253,10 @@ void exec_inst(machine_t* m, uint32_t inst)
 
 void check_excep(machine_t* m)
 {
+  if (m->regs[REG_FR] & FRBIT_HALT) {
+    Printf("*** Fatal error! Errno=%d\n", m->regs[11]);
+    exit(m->regs[11]);
+  }
   // check for ERET
   if (m->regs[REG_FR] & FRBIT_ERET) {
 #ifdef EXCEP_WATCH
@@ -322,7 +325,7 @@ vma_t* add_vma(machine_t* m, uint32_t beg, uint32_t end, uint32_t perm)
   vma->perm = perm;
   vma->next = m->mm.vma;
   m->mm.vma = vma;
-  vma->data = calloc(end - beg, 1); // 1 MB of stack space
+  vma->data = calloc(end - beg, 1);
   return vma;
 }
 

@@ -15,14 +15,13 @@
 */
 #include "printf.h"
 #include "private_kernel_interface.h"
-#include "../emulators/c/op-cpu.h"
-#include <assert.h>
+#include "op-cpu.h"
+#include "fatal.h"
 
 unsigned int current_task_id = 0;
 unsigned int num_clock_ticks = 0;
 unsigned int saved_uart1_out_ready = 0;
 unsigned int saved_uart1_in_ready = 0;
-unsigned int current_timer_period = 0xA000;
 
 void schedule_next_task(void){
 	struct process_control_block * next_task;
@@ -55,7 +54,9 @@ void unblock_tasks_for_event(enum kernel_event event){
 			struct process_control_block * unblocked_task;
 			if(task_queue_current_count(&blocked_on_uart1_out_ready_queue) == 0){
 				/*  Nothing has blocked on this event yet so save the signal */
-				assert(!saved_uart1_out_ready && "There should be no previous saved uart signal.  Expect output problems.");
+        if (saved_uart1_out_ready)
+          fatal(9); 
+        // There should be no previous saved uart signal.  Expect output problems.
 				saved_uart1_out_ready = 1;
 			}else{
 				unblocked_task = task_queue_pop_start(&blocked_on_uart1_out_ready_queue); 
@@ -66,7 +67,9 @@ void unblock_tasks_for_event(enum kernel_event event){
 			struct process_control_block * unblocked_task;
 			if(task_queue_current_count(&blocked_on_uart1_in_ready_queue) == 0){
 				/*  Nothing has blocked on this event yet so save the signal */
-				assert(!saved_uart1_in_ready && "There should be no previous saved uart signal.  Expect input problems.");
+				if (saved_uart1_in_ready)
+          fatal(10);
+        // There should be no previous saved uart signal.  Expect input problems.
 				saved_uart1_in_ready = 1;
 			}else{
 				unblocked_task = task_queue_pop_start(&blocked_on_uart1_in_ready_queue); 
@@ -74,7 +77,7 @@ void unblock_tasks_for_event(enum kernel_event event){
 			}
 			break;
 		}default:{
-			assert(0 && "Unhandled unblock event.\n");
+      fatal(11); // Unhandled unblock event.
 			break;
 		}
 	}
@@ -154,7 +157,7 @@ void k_block_on_event(enum kernel_event event){
 			}
 			break;
 		}default:{
-			assert(0 && "Blocking on unknown event.\n");
+			fatal(12); // Blocking on unknown event.
 		}
 	}
 }
@@ -289,26 +292,27 @@ void k_kernel_init(void){
   /*  Task 0 is not really a task, it is the 'int main' that we might want to return to later for graceful exit. */
 
   new_thread(PID_INIT,
-      5, g_current_sp, (void (*)(void)) 0);
+      5, 0, (void (*)(void)) 0);
   new_thread(PID_USER_PROC_1,
       5, &user_proc_1_stack[STACK_SIZE-1], user_proc_1);
   new_thread(PID_CLOCK_COUNTER,
-      2, &user_proc_3_stack[STACK_SIZE-1], clock_tick_counter);
+      2, &user_proc_2_stack[STACK_SIZE-1], clock_tick_counter);
   new_thread(PID_UART1_OUT_READY_NOTIFIER, 
-      0, &user_proc_5_stack[STACK_SIZE-1], uart1_out_ready_notifier);
+      0, &user_proc_3_stack[STACK_SIZE-1], uart1_out_ready_notifier);
   new_thread(PID_UART1_OUT_SERVER,
-      1, &user_proc_6_stack[STACK_SIZE-1], uart1_out_server);
+      1, &user_proc_4_stack[STACK_SIZE-1], uart1_out_server);
   new_thread(PID_UART1_IN_READY_NOTIFIER,
-      0, &user_proc_7_stack[STACK_SIZE-1], uart1_in_ready_notifier);
+      0, &user_proc_5_stack[STACK_SIZE-1], uart1_in_ready_notifier);
   new_thread(PID_UART1_IN_SERVER,
-      1, &user_proc_8_stack[STACK_SIZE-1], uart1_in_server);
+      1, &user_proc_6_stack[STACK_SIZE-1], uart1_in_server);
   new_thread(PID_COMMAND_SERVER,
-      3, &user_proc_9_stack[STACK_SIZE-1], command_server);
+      3, &user_proc_7_stack[STACK_SIZE-1], command_server);
 
-	set_timer_period(current_timer_period);
+	set_timer_period(INITIAL_TIMER_PERIOD_VALUE);
 	timer_interrupt_enable();
 	uart1_out_interrupt_enable();
 	uart1_in_interrupt_enable();
+  // if direct output is not enabled, ignore
   *(unsigned*) (0x300090) = 'K';
   *(unsigned*) (0x300090) = 'E';
   *(unsigned*) (0x300090) = 'R';
@@ -316,6 +320,6 @@ void k_kernel_init(void){
   *(unsigned*) (0x300090) = 'U';
   *(unsigned*) (0x300090) = 'C';
   *(unsigned*) (0x300090) = 'C';
-  //printf_busy("Kernel load success!\n");
+  // printf_busy("Kernel load success!\n");
 	schedule_next_task();
 }
