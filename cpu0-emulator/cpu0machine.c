@@ -265,8 +265,7 @@ void check_excep(machine_t* m)
 #endif
     m->regs[REG_FR] &= ~FRBIT_ERET;
     m->regs[REG_FR] |= FRBIT_GIE; // enable interrupts
-    assert(mem_read(m, m->regs[REG_SP], &(m->regs[REG_PC])) == 0);
-    m->regs[REG_SP] += 4; // pop PC
+    m->regs[REG_PC] = m->regs[REG_EPC];
 #ifdef EXCEP_WATCH
     Printf(" to %08X\n", m->regs[REG_PC]);
     dump_fr(m);
@@ -309,8 +308,7 @@ void check_excep(machine_t* m)
   if (!excep)
     return;
 
-  m->regs[REG_SP] -= 4;
-  assert(mem_write(m, m->regs[REG_SP], m->regs[REG_PC]) == 0); // push PC
+  m->regs[REG_EPC] = m->regs[REG_PC];
   m->regs[REG_FR] &= ~FRBIT_GIE;  // disable interrupts
   assert(mem_read(m, IRQ_HANDLER, &(m->regs[REG_PC])) == 0); // goto irq_handler
 }

@@ -464,6 +464,10 @@ irq_handler:
 	.set	noreorder
 	.set	nomacro
 
+# epc 被保存到用户栈上
+  addiu $sp, $sp, -4
+  sto $epc, 0($sp)
+
 # 保存 GPR 到 current 栈上
   addiu $sp, $sp, -44
   sto $v0, 0($sp)
@@ -514,6 +518,11 @@ do_eret:
   loa $fp, 36($sp)
   loa $lr, 40($sp)
   addiu $sp, $sp, 44
+
+# epc 被保存到用户栈上
+  loa $epc, 0($sp)
+  addiu $sp, $sp, 4
+
 # 执行 eret
   or $fr, $fr, $wr
 
