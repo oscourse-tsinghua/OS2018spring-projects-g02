@@ -17,7 +17,7 @@
 +-------+------+-----------------------------------------------------------------------------------------+
 | Regno | Name | Usage                                                                                   |
 +-------+------+-----------------------------------------------------------------------------------------+
-| 0     | pc   | hold's current instruction's address plus 4                                             |
+| 0     | pc   | hold's current instruction's address                                                    |
 | 1     | sp   | stack pointer                                                                           |
 | 2     | fp   | frame pointer, for llvm compiler it's not used. callee-save register (CSR).             |
 | 3     | zr   | zero register, always zero even written another value                                   |
@@ -72,7 +72,7 @@ J-type (is expected to be removed in the future)
 | Assembly          | Opcode | Semantics           | Others                |
 +-------------------+--------+---------------------+-----------------------+
 | add $rx, $ry, $rz | 0      | $rx = $ry + $rz;    | no overflow exception |
-| sub $rx, $ry, $rz | 1      | $rz = $ry - $rz;    | no overflow exception |
+| sub $rx, $ry, $rz | 1      | $rx = $ry - $rz;    | no overflow exception |
 | mul $rx, $ry, $rz | 2      | $rx = $ry * $rz;    | taking lower 32 bits  |
 | div $rx, $ry, $rz | 3      | not implemented yet |                       |
 | and $rx, $ry, $rz | 4      | $rx = $ry & $rz;    | bitwise and           |
@@ -96,16 +96,16 @@ J-type (is expected to be removed in the future)
 | ori $rx, $ry, imm   | 16     | $rx = $ry O zero-extend(imm);                | bitwise or                         | *
 | bne $rx, $ry, imm   | 19     | if $rx != $ry then $pc += sign-extend(imm);  | same as beq                        | *
 | jr $rx              | 20     | $pc = $rx;                                   |                                    | *
-| jalr $rx            | 21     | $lr = $pc; $pc = $rx;                        |                                    |
+| jalr $rx            | 21     | $lr = $pc+4; $pc = $rx;                      |                                    |
 +---------------------+--------+----------------------------------------------+------------------------------------+
 ```
 ### J-type
 ```
-+-------------+--------+---------------------------------------+--------+
-| Assembly    | Opcode | Semantics                             | Others |
-+-------------+--------+---------------------------------------+--------+
-| jsub offset | 22     | $lr = $pc; $pc += sign-extend(offset) |        | *
-+-------------+--------+---------------------------------------+--------+
++-------------+--------+-------------------------------------------+--------+
+| Assembly    | Opcode | Semantics                                 | Others |
++-------------+--------+-------------------------------------------+--------+
+| jsub offset | 22     | $lr = $pc+4; $pc += sign-extend(offset)+4 |        | *
++-------------+--------+-------------------------------------------+--------+
 ```
 以上
 
