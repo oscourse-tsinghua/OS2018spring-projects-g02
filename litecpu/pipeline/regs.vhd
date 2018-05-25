@@ -25,15 +25,17 @@ entity REGS is
 		-- Deal with interrupts or exceptions --
 		halt_o: out std_logic;
 		
-		display_reg_o: out std_logic_vector(95 downto 0);
+		display_reg_o: out std_logic_vector(103 downto 0);
 		
 		UART1_IN_ready_i: in std_logic;
-		UART1_OUT_ready_i: in std_logic
+		UART1_OUT_ready_i: in std_logic;
 		
---		irq_i: in dword;
+		irq_i: in dword;
+		timer_i: in dword;
+		clear_count_i: in std_logic;
 		
 		-- halt the cpu for a clk period to handle interrupt
---		active_i: in std_logic;
+		active_i: in std_logic
 --		reg_halt_o: out std_logic;
 --	   active_o: out std_logic;
 		
@@ -68,6 +70,9 @@ architecture behave of REGS is
 	signal current_sp: dword;
 	signal current_pc: dword;
 	signal recover_int: std_logic;
+	signal assert_int: std_logic;
+	
+	signal count: dword;
 begin
 	pc_o <= regs(0);
 	pc_we_o <= pc_we;
@@ -76,6 +81,7 @@ begin
 	real_r2_addr <= raddr2_i(4 downto 0);
 	halt_o <= regs(4)(0);
 	display_reg_o <=  
+	regs(18)(7 downto 0) &
 	regs(4)(15 downto 8) &
 	regs(4)(7 downto 0) &
 	regs(14)(7 downto 0) & 
@@ -117,6 +123,7 @@ begin
 			regs(4) <= x"00000200";
 			UART1_IN_ready <= '0';
 			UART1_OUT_ready <= '1';
+			assert_int <= '0';
 		elsif (rising_edge(clk_i)) then
 /*			int_mode_o <= RAM_NOP;
 			int_addr_o <= (others=> '0');
@@ -128,19 +135,6 @@ begin
 			else 
 				regs(0) <= pc_i;
 			end if;
-/*			if ((active_i = '1') and (reg_halt = '1')) then 
-				active_o <= '1';
-				reg_halt <= '0';	
-				if (recover_int = '0') then 
-					int_mode_o <= RAM_WRITE;				
-					int_addr_o <= current_sp;
-					int_wdata_o <= current_pc;
-				else
-					int_mode_o <= RAM_READ;
-					int_addr_o <= current_sp;
-					recover_o <= '1';
-				end if;
-			end if;*/
 			if (wr_en_i = '1') then
 				regs(to_integer(unsigned(real_wr_addr))) <= wr_data_i;
 				if (real_wr_addr = "00000") then 
@@ -148,11 +142,12 @@ begin
 				elsif ((real_wr_addr = "00100") and (wr_data_i(2) = '1')) then 
 					regs(4)(1) <= '1';
 					regs(4)(2) <= '0';
-					
-/*					current_sp <= regs(1);
-					current_pc <= regs(0);
-					regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
-*/				end if;
+									
+					regs(0) <= regs(18);
+					pc_we <= '1';
+				elsif ((real_wr_addr = "00100") and (wr_data_i(3) = '1')) then 
+					count <= x"00000000";
+				end if;
 			end if;
 			if (UART1_IN_last_ready /= UART1_IN_ready) then 
 				regs(4)(10) <= '1';
@@ -160,14 +155,8 @@ begin
 					regs(4)(8) <= '1';
 					regs(4)(1) <= '0';
 
-/*					current_sp <= regs(1);
-					current_pc <= regs(0);
-				regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
-					
---					reg_halt <= '1';
---					regs(0) <= irq_i;
-					pc_we <= '1';
-*/				end if;
+					assert_int <= '1';
+				end if;
 				UART1_IN_ready <= UART1_IN_last_ready;
 			end if;
 			if (UART1_OUT_last_ready /= UART1_OUT_ready) then
@@ -176,19 +165,35 @@ begin
 					regs(4)(6) <= '1';
 					regs(4)(1) <= '0';
 
-/*					current_sp <= regs(1);
-					current_pc <= regs(0);
-				regs(1) <= std_logic_vector(unsigned(regs(1)) - 4);
-						
---					reg_halt <= '1';
+					assert_int <= '1';
+				end if;
+				UART1_OUT_ready <= UART1_OUT_last_ready;
+			end if;
+			if (active_i = '1') then 
+				if (clear_count_i = '1') then 
+					count <= x"00000000";
+				elsif ((regs(4)(3) = '1') and (regs(4)(1) <= '1') and (timer_i /= x"00000000")) then 
+					count <= std_logic_vector(unsigned(count) + 1);
+					if (count = timer_i) then 
+						count <= x"00000000";
+						regs(18) <= regs(0);
+						regs(0) <= irq_i;
+						pc_we <= '1';
+						regs(4)(4) <= '1';
+						regs(4)(1) <= '0';
+					end if;
+				else 
+					count <= x"00000000";
+				end if;
+				if (assert_int = '1') then 
+					assert_int <= '0';
+					regs(18) <= regs(0);
 					regs(0) <= irq_i;
 					pc_we <= '1';
-*/				end if;
-				UART1_OUT_ready <= UART1_OUT_last_ready;
+				end if;
 			end if;
 		end if;
 	end process;
-
 
 	process (all)
 	begin

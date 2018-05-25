@@ -51,10 +51,14 @@ entity MMU is
 		COMTEST: out std_logic;
 		
 		UART1_IN_ready_o: out std_logic;
-		UART1_OUT_ready_o: out std_logic
+		UART1_OUT_ready_o: out std_logic;
 		
 		-- IRQ_HANDLER
---		irq_o: out dword
+		irq_o: out dword;
+		
+		-- TIMER_PERIOD
+		timer_o: out dword;
+		clear_count_o: out std_logic
 	);
 end MMU;
 
@@ -67,7 +71,9 @@ architecture bhv of MMU is
 	signal ramw1: std_logic;
 	signal ramw2: std_logic;
 	signal ram_we: std_logic;
---	signal irq: dword := x"ffffff34";
+	signal irq: dword;
+	signal timer: dword;
+	signal clear_count: std_logic;
 begin
 
 	-- write (happens on clk_i rising edges) (*** not a practical assump. ***)
@@ -81,7 +87,9 @@ begin
 	UART1_OUT_ready_o <= (not COMTransmitBusy) and (comReadySend xor comLastSend);
 	COMTEST <= '0';
 	
---	irq_o <= x"ffffff34";
+	irq_o <= irq;
+	timer_o <= timer;
+	clear_count_o <= clear_count;
 
 	process (clk_i, rst_i)
 	begin
@@ -103,6 +111,32 @@ begin
 			end if;
 			ramw2 <= not ramw1;
 		end if;
+	end process;
+	
+	process (clk_i, rst_i)	--IRQ
+	begin
+		if (rst_i = '1') then 
+			irq <= x"ffffff00";
+		elsif (falling_edge(clk_i)) then
+			if ((MEMMode_i = RAM_WRITE) and (MEMAddr_i = x"C0FFEE00")) then 
+				irq <= MEMWData_i;
+			end if;
+		end if; 
+	end process;
+	
+	process (clk_i, rst_i)	--TIMER
+	begin
+		if (rst_i = '1') then 
+			timer <= x"00000000";
+		elsif (falling_edge(clk_i)) then
+			if (clear_count = '1') then 
+				clear_count <= '0';
+			end if;
+			if ((MEMMode_i = RAM_WRITE) and (MEMAddr_i = x"0C0FFEE0")) then 
+				timer <= MEMWData_i;
+				clear_count <= '1';
+			end if;
+		end if; 
 	end process;
 	
 	--	MEM && IFF
@@ -139,14 +173,15 @@ begin
 --				intRdata_o <= ram_rdata_i;
 --			end if;
 		elsif (MEMMode_i /= RAM_NOP) then
-			if (MEMAddr_i(23 downto 20) = x"3") then 
-/*				if (MEMAddr_i = x"00300020") then --IRQ_HANDLER
-					if (MEMMode_i = RAM_READ) then 
-						MEMRData_o <= irq;
-					elsif (MEMMode_i = RAM_WRITE) then
-						irq <= MEMWData_i;
-					end if;
-				els*/
+			if (MEMAddr_i = x"C0FFEE00") then --IRQ_HANDLER
+				if (MEMMode_i = RAM_READ) then 
+					MEMRData_o <= irq;
+				end if;
+			elsif (MEMAddr_i = x"0C0FFEE0") then --TIMER_PERIOD
+				if (MEMMode_i = RAM_READ) then 
+					MEMRData_o <= timer;
+				end if;
+			elsif (MEMAddr_i(23 downto 20) = x"3") then 
 				if (MEMAddr_i = x"00300010") then -- UART_IN
 					if (MEMMode_i = RAM_READ) then	-- only read the UART_IN can be allowed
 						MEMRData_o <= zero_extend(comRdata);

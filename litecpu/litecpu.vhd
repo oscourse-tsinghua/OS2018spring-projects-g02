@@ -57,7 +57,7 @@ architecture behave of litecpu is
 	signal ram_wdata: dword;
 	signal ram_we: std_logic;
 	
-	signal watch_reg: std_logic_vector(95 downto 0);
+	signal watch_reg: std_logic_vector(103 downto 0);
 	signal watch_inst: dword;
 	
 	signal COMReceiveData: std_logic_vector(7 downto 0);
@@ -77,6 +77,9 @@ architecture behave of litecpu is
 	signal opcodeTEST: opcode_t;
 	
 	signal irq: dword;
+	signal timer: dword;
+	signal clear_count: std_logic;
+	
 	signal reg_pcTEST: dword;
 	signal reg_pc_weTEST: std_logic;
 	
@@ -153,10 +156,12 @@ architecture behave of litecpu is
 			COMTEST: out std_logic;
 			
 			UART1_IN_ready_o: out std_logic;
-			UART1_OUT_ready_o: out std_logic
+			UART1_OUT_ready_o: out std_logic;
 			
 			-- IRQ
---			irq_o: out dword
+			irq_o: out dword;
+			timer_o: out dword;
+			clear_count_o: out std_logic
 		);
 	end component;
 
@@ -202,7 +207,7 @@ architecture behave of litecpu is
 			intWData_o: out dword;
 			intRData_i: in dword;
 */			
-			display_reg_o: out std_logic_vector(95 downto 0);
+			display_reg_o: out std_logic_vector(103 downto 0);
 			display_inst_o: out dword;
 			
 			IDModeTEST: out rammode_t;
@@ -218,7 +223,9 @@ architecture behave of litecpu is
 			UART1_IN_ready_i: in std_logic;
 			UART1_OUT_ready_i: in std_logic;
 			
---			irq_i: in dword;
+			irq_i: in dword;
+			timer_i: in dword;
+			clear_count_i: in std_logic;
 			reg_pcTEST: out dword;
 			reg_pc_weTEST: out std_logic;
 			
@@ -259,8 +266,7 @@ begin
 		fatalled <= fatalled or fatalTEST;
 	end if;
 	case switch is
-		when "0000" => 
---			led <= not irq(7 downto 0);
+		when "0000" => 		
 			led <= not watch_reg(7 downto 0);
 		when "0001" =>
 			led <= not watch_reg(15 downto 8);
@@ -287,7 +293,8 @@ begin
 		when "1100" => 
 			led <= not watch_inst(7 downto 0);
 		when "1101" => 
-			led <= not COMReceiveData(7 downto 0);
+--			led <= not irq(7 downto 0);
+			led <= not watch_reg(103 downto 96);
 		when "1110" => 
 			led <= x"ff";
 			case IDModeTEST is
@@ -396,9 +403,11 @@ begin
 		COMTEST => COMTEST,
 		
 		UART1_IN_ready_o => UART1_IN_ready,
-		UART1_OUT_ready_o => UART1_OUT_ready
+		UART1_OUT_ready_o => UART1_OUT_ready,
 		
---		irq_o => irq
+		irq_o => irq,
+		timer_o => timer,
+		clear_count_o => clear_count
 	);
 
 	ucpu_core:
@@ -438,7 +447,9 @@ begin
 		UART1_IN_ready_i => UART1_IN_ready,
 		UART1_OUT_ready_i => UART1_OUT_ready,
 		
---		irq_i => irq,
+		irq_i => irq,
+		timer_i => timer,
+		clear_count_i => clear_count,
 		reg_pcTEST => reg_pcTEST,
 		reg_pc_weTEST => reg_pc_weTEST,
 		

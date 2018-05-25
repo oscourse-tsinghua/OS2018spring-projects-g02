@@ -57,10 +57,10 @@ begin
 /*					if (recover_i = '1') then 
 						pc <= intRdata_i;
 					els*/
-					if (jb_en_i = '1') then	
-						pc <= jb_pc_i;
-					elsif (pc_we_i = '1') then 
+					if (pc_we_i = '1') then 
 						pc <= pc_i;
+					elsif (jb_en_i = '1') then	
+						pc <= jb_pc_i;
 					else
 						pc <= std_logic_vector(unsigned(pc) + 4);
 					end if;

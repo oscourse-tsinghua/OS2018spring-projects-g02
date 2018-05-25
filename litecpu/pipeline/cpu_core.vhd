@@ -23,7 +23,7 @@ entity CPU_CORE is
 		intWData_o: out dword;
 		intRData_i: in dword;
 */		
-		display_reg_o: out std_logic_vector(95 downto 0);
+		display_reg_o: out std_logic_vector(103 downto 0);
 		display_inst_o: out dword;
 		
 		IDModeTEST: out rammode_t;
@@ -39,7 +39,9 @@ entity CPU_CORE is
 		
 		opcodeTEST: out opcode_t;
 		
---		irq_i: in dword;
+		irq_i: in dword;
+		timer_i: in dword;
+		clear_count_i: in std_logic;
 		reg_pcTEST: out dword;
 		reg_pc_weTEST: out std_logic;
 		
@@ -52,7 +54,7 @@ end CPU_CORE;
 
 architecture behave of CPU_CORE is
 
-	signal watch_reg: std_logic_vector(95 downto 0);
+	signal watch_reg: std_logic_vector(103 downto 0);
 	
 	signal halt: std_logic;
 
@@ -170,12 +172,14 @@ begin
 		
 		pc_i => if_pc_o,
 		pc_o => reg_pc,
-		pc_we_o => reg_pc_we
+		pc_we_o => reg_pc_we,
 		
---		irq_i => irq_i,
+		irq_i => irq_i,
+		timer_i => timer_i,
+		clear_count_i => clear_count_i,
 --		reg_halt_o => reg_halt,
 --		active_o => reg_active,
---		active_i => wb_active_i
+		active_i => wb_active_i
 		
 /*		int_mode_o => intMode_o,
 		int_Addr_o => intAddr_o,
