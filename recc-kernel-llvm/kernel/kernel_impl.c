@@ -170,16 +170,16 @@ void k_irq_handler(void){
 		or_into_flags_register(HALTED_BIT); /*  Halt the processor for now */
 		/*  De-assert the bit last, so we can detect nested page fault exceptions */
 		deassert_bits_in_flags_register(PAGE_FAULT_EXCEPTION_ASSERTED_BIT);
-	}else if((ass = flags_register & TIMER1_ASSERTED_BIT)){
-		deassert_bits_in_flags_register(TIMER1_ASSERTED_BIT);
-		num_clock_ticks++;
-		unblock_tasks_for_event(CLOCK_TICK_EVENT);
 	}else if((ass = flags_register & UART1_OUT_ASSERTED_BIT)){
 		deassert_bits_in_flags_register(UART1_OUT_ASSERTED_BIT);
 		unblock_tasks_for_event(UART1_OUT_READY);
 	}else if((ass = flags_register & UART1_IN_ASSERTED_BIT)){
 		deassert_bits_in_flags_register(UART1_IN_ASSERTED_BIT);
 		unblock_tasks_for_event(UART1_IN_READY);
+	}else if((ass = flags_register & TIMER1_ASSERTED_BIT)){
+		deassert_bits_in_flags_register(TIMER1_ASSERTED_BIT);
+		num_clock_ticks++;
+		unblock_tasks_for_event(CLOCK_TICK_EVENT);
 	}else{
 		/*  Something really bad happend. */
 		/*  Busy print will affect flags, but in this case everything is broken anyway */
@@ -313,13 +313,6 @@ void k_kernel_init(void){
 	uart1_out_interrupt_enable();
 	uart1_in_interrupt_enable();
   // if direct output is not enabled, ignore
-  *(unsigned*) (0x300090) = 'K';
-  *(unsigned*) (0x300090) = 'E';
-  *(unsigned*) (0x300090) = 'R';
-  *(unsigned*) (0x300090) = 'S';
-  *(unsigned*) (0x300090) = 'U';
-  *(unsigned*) (0x300090) = 'C';
-  *(unsigned*) (0x300090) = 'C';
   // printf_busy("Kernel load success!\n");
 	schedule_next_task();
 }

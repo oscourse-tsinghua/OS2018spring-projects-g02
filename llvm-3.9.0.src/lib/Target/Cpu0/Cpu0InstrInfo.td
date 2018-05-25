@@ -264,11 +264,11 @@ class JumpLink<bits<6> op, string instr_asm>:
 
 class JumpLinkReg<bits<6> op, string instr_asm,
                   RegisterClass RC>:
-  FA<op, (outs), (ins RC:$rb, variable_ops),
-     !strconcat(instr_asm, "\t$rb"), [(Cpu0JmpLink RC:$rb)]> 
+  FA<op, (outs), (ins RC:$ra, variable_ops),
+     !strconcat(instr_asm, "\t$ra"), [(Cpu0JmpLink RC:$ra)]> 
 {
   let rc = 0;
-  let ra = 7;
+  let rb = 7;
   let isCall = 1;
 }
 

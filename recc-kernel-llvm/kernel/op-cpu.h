@@ -58,13 +58,8 @@
 
 #define UART1_OUT        0x00300000u
 #define UART1_IN         0x00300010u
-#define IRQ_HANDLER      0x00300020u
-#define TIMER_PERIOD     0x00300030u
-#define PAGE_POINTER     0x00300040u
-#define PFE_PAGE_POINTER 0x00300044u 
-#define PFE_PC_VALUE     0x00300048u 
-#define PFE_ACCESS       0x0030004Cu 
-#define PFE_VIRTUAL      0x00300050u 
+#define IRQ_HANDLER      0xc0ffee00u
+#define TIMER_PERIOD     0x0c0ffee0u
 
 #define PC_index 0u
 #define SP_index 1u
@@ -103,6 +98,6 @@
 #define	BLT_OP_CODE (12u << OP_CODE_OFFSET)
 #define	LL_OP_CODE  (13u << OP_CODE_OFFSET)
 
-#define INITIAL_TIMER_PERIOD_VALUE 0xA000
+#define INITIAL_TIMER_PERIOD_VALUE 0xA0000
 
 #endif

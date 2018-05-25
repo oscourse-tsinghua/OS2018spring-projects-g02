@@ -49,6 +49,8 @@ let Namespace = "Cpu0" in {
   def T0: Cpu0GPRReg<15, "t0">, DwarfRegNum<[15]>;
   def T1: Cpu0GPRReg<16, "t1">, DwarfRegNum<[16]>;
   def T2: Cpu0GPRReg<17, "t2">, DwarfRegNum<[17]>;
+
+  def EPC: Cpu0GPRReg<18, "epc">, DwarfRegNum<[18]>;
 }
 
 
@@ -63,6 +65,6 @@ def CPURegs : RegisterClass<"Cpu0", [i32], 32, (add
   S0, S1,
   // reserved
   GP, FP, 
-  SP, LR, SW)>;
+  SP, LR, SW, EPC)>;
 
 
