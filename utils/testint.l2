@@ -1,0 +1,27 @@
+ll r2 0x0030
+ll r1 0x0010
+shl r2 r2 r1
+ll r3 0x0020
+add r2 r2 r3
+;now r2 = irq_addr(0x00300020)
+ll r4 0x0044
+sto r2 r4
+;r4=irq
+ll r5 0x00a2
+or FR FR r5
+;enable interrupt
+ll r8 0x5959
+ll r6 0x1234
+ll r7 0x1234
+beq r6 r7 -1
+ll r8 0x7474
+beq ZR ZR -1
+add ZR ZR ZR
+add ZR ZR ZR
+add ZR ZR ZR
+add ZR ZR ZR
+add ZR ZR ZR
+ll r7 0x4321
+ll r9 0x0004
+or FR FR r9 
+beq ZR ZR -1

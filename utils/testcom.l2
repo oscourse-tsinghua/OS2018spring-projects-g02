@@ -1,0 +1,13 @@
+ll r5 0x0400
+ll r6 0x0200
+ll r7 0x0030
+ll r2 0x0010
+shl r7 r2
+add r8 r7 r2
+and r1 r5 FR
+beq r1 ZR -2
+loa r9 r8
+and r1 r6 FR
+beq r1 ZR -2
+sto r7 r9
+beq ZR ZR -1

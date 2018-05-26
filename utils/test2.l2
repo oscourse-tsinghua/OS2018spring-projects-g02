@@ -1,0 +1,45 @@
+ll r5 0x0400
+ll r7 0x0030
+ll r2 0x0010
+shl r7 r2
+add r8 r7 r2
+add r4 ZR ZR
+ll r12 0xFFFF
+shl r12 r2
+ll r13 0xFBFF
+add r13 r13 r12
+ll r14 0xFDFF
+add r14 r14 r12
+ll r15 0x0200
+;loop
+add r6 ZR ZR
+ll r3 0x0000
+and r1 r5 FR
+beq r1 ZR -2
+loa r9 r8
+and FR FR r13
+shl r6 WR
+shl r6 WR
+add r6 r6 r9
+and r1 r15 FR
+beq r1 ZR -2
+sto r7 r6
+and FR FR r14
+add r3 r3 WR
+blt r3 r2 -13
+beq r6 r7 3
+sto r4 r6 
+add r4 r4 WR
+beq ZR ZR -19
+;loop_end
+;write_loop2
+sub r4 r4 WR
+and r1 r15 FR
+beq r1 ZR -2
+loa r6 r4
+sto r7 r6
+and FR FR r14
+beq r4 ZR 1 
+beq ZR ZR -8
+;end_write_loop2
+ll PC 0x0000

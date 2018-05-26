@@ -14,6 +14,8 @@ entity MEM is
 		regwr_addr_o: out reg_addr_t;
 		regwr_en_i: in std_logic;
 		regwr_en_o: out std_logic;
+		mod_lr_i: in std_logic;
+		mod_lr_o: out std_logic;
 
 		regwr_data_o: out dword;
 		
@@ -30,6 +32,7 @@ begin
 	-- But I'm not sure whether this would reduce resource usage.
 	regwr_addr_o <= regwr_addr_i;
 	regwr_en_o <= regwr_en_i;
+	mod_lr_o <= mod_lr_i;
 
 
 	process (all)
