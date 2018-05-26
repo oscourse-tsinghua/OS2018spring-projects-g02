@@ -241,7 +241,7 @@ class FA<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>:
 但是在我们的 ISA 中取 `V>>16` 即可, 就是不用考虑第 15 位.
 
 # 参考文献
-* Getting Started with LLVM Core Libraries.pdf
-* Cpu0 两篇文档
-* tricore\_llvm.pdf
-* Cormack-BuildingAnLLVMBackend.pdf
+* [Getting Started with LLVM Core Libraries](https://e.jd.com/30370568.html), 百度也能找到电子书
+* Cpu0 两篇文档: [lbd](http://jonathan2251.github.io/lbd/) [lbt](http://jonathan2251.github.io/lbt/)
+* [Building an LLVM Backend - LLVM 2014 tutorial](http://llvm.org/devmtg/2014-10/Slides/Cormack-BuildingAnLLVMBackend.pdf)
+* [Howto: Implementing LLVM Integrated Assembler - A Simple Guide](https://www.embecosm.com/appnotes/ean10/ean10-howto-llvmas-1.0.pdf)
