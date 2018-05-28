@@ -1,6 +1,4 @@
 # 编译系统实现
-编译系统由戴臻旸同学实现.
-
 本次作业中, 编译系统主要参考了 Cpu0 项目的[编译器后段](http://jonathan2251.github.io/lbd/),
 [链接器](http://jonathan2251.github.io/lbt/). 编译系统基于 llvm 框架.
 
@@ -67,6 +65,8 @@ LLVM 使用的是一种类似 Tree Rewriting (参见龙书 Instruction Selection
 
 ### LLVM 的 DAG 相关的模型
 中间代码产生的 IR 还不能直接应用到我们的指令选择, 因为
+* IR 使用的是虚拟寄存器
+* IR 中有大量高层操作, 如依赖于 ABI 的 `call`, `ret`, 抽象的 "加" 在底层对应 `addrr`, `addri` 等.
 
 所以 DAG 还要经历所谓的 Lowering. 包括
 * 操作本身: 将高层次的操作变得更低层次, 如把 IR 的 `call` 变成加载目标地址和 `jalr`
@@ -99,13 +99,149 @@ DSL 描述 ISA (称为一个 Target) 我们需要描述的有
 之后对于每个 Subtarget (同一个 Target, 但是有不同的变种如 Mips16, Mips32) 把信息综合起来到一个 tablegen 里面.
 
 # 工作步骤
-构建一个 llvm 后端, 参考 Cpu0 文档的设计, 完成如下步骤
+构建一个 llvm 后端, 需要使用 tablegen 和 C++ 共同描述目标 ISA.
 
-1. 在 llvm 框架中注册后端, 此时如果编译会得到错误 `cannot allocate TargetMachine`
-2. 加入寄存器描述 `XXXRegisterInfo.td`, 指令描述 `XXXInstrInfo.td` 和 `XXXInstrFormat.td`
+LLVM 为了模块化, 大量使用了 OO 的设计,
+新建后端的 tablegen 和 C++ 代码都需要继承 LLVM 已有的类,
+改写域 / 实现虚函数.
+
+1. **注册**: 在 llvm 框架中注册后端.
+  - 相关文件: `LLVM/lib/` 中除了 `LLVM/lib/Target/XXX` 的新增代码.
+
+2. **描述ISA**: 
+  - 相关文件: (`XXX/` 表示 `LLVM/lib/Target/XXX`, 在我们的项目中 `XXX` 就是 Cpu0)
+  `XXX/XXXRegisterInfo.td`, `XXX/XXXInstrInfo.td`, `XXX/XXXInstrInfo.td`, `XXX/CallingConv.td`,
+  `XXX/XXX.td`, `XXX/XXXInstrInfo.{cpp,h}`, `XXX/XXXRegisterInfo.{cpp,h}`
+
+3. **C++ 描述 TargetMachine**: 描述目标架构, 如数据布局
+  - 相关文件: `XXX/XXX.h`, `XXX/XXXTargetMachine.{cpp,h}`, `XXX/XXXSubtarget.{cpp,h}`,
+    `XXX/TargetInfo/XXXTargetInfo.cpp`
+
+4. **C++ 描述复杂的 DAG 控制**: 诸如传参, 函数调用, 函数返回值等操作, 需要复杂的对 LLVM 指令选择 DAG 的操作.
+  - 栈布局: `XXX/XXXFrameLowering.{cpp,h}`
+  - 复杂 Lowering: `XXX/XXXISelDAGToDAG.{cpp,h}`, `XXX/XXXISelLowering.{cpp,h}`
+
+5. **打印汇编代码**
+  - 相关代码: `XXX/XXXMCInstLower.{cpp,h}`, `XXX/XXXAsmPrinter.cpp`, `XXX/InstPrinter/XXXInstPrinter.{cpp,h}`
+
+6. **机器代码发射**
+  - 相关代码: `XXX/MCTargetDesc/*`
+
+因为时间有限, 我主要的精力放在 tablegen 上, 后面有一些 C++ 代码没有仔细理解.
+
+# 注册
+1. 加入新的 ELF `e_machine`, 在 `LLVM/lib/Object/ELF.cpp`
+2. 修改 `LLVM/lib/Support/Triple.cpp`, 加入 XXX 的 triple.
+
+# 描述 ISA
+## tablegen 部分
+我们 tablegen 主要依赖的有 
+`LLVM/include/llvm/Target/Target.td`,
+`LLVM/include/llvm/Target/TargetSelectionDAG.td`,
+`LLVM/include/llvm/Target/TargetCallingConv.td`
+代码. 步骤如下.
+
+1. 加入寄存器描述 `XXX/XXXRegisterInfo.td`. 在我们的代码中, 包括
+
+2. 加入指令描述. `XXX/XXXInstrInfo.td`. 这一过程大量使用 tablegen 的继承特性, 来避免重复的工作.
+  - 指令格式: 指令长度, 二进制编码是什么样的, 如 `FA` 是 
+```
+class FA<bits<6> opcode, dag outs, dag ins, string asmstr, list<dag> pattern>:
+      Cpu0Inst<outs, ins, asmstr, pattern, Cpu0IEF_A>
+{
+  bits<5>  ra;
+  bits<5>  rb;
+  bits<5>  rc;
+  bits<11> reserved = 0;
+
+  let Inst{31-26} = opcode;
+  let Inst{25-21} = ra;
+  let Inst{20-16} = rb;
+  let Inst{15-11} = rc;
+  let Inst{10-0} = reserved;
+}
+```
+  - 具体指令操作: 对于每个指令, 需要描述其操作码, 汇编语言怎么表示,
+    输入操作数有哪些, 输出操作数有哪些, 这条指令完成什么样的功能 (通过一个 DAG 碎片描述)
+  - 新的 `SDNode`: 指令选择 DAG 中, 除了 LLVM 自带的如 `add` 等结点, 还允许后端自己定义 DAG 结点.
+    我们这里主要定义了针对 XXX 的函数调用和返回定义新的 SDNode.
+    为了定义 `SDNode` 可能还需要加入 `SDTypeProfile`, 用于描述 DAG 结点的输入应当是什么类型.
+  - 定义操作数类型: 如 16位有符号数, 16位无符号数, 内存操作数 `off($rx)`
+  - DAG 中模式替换: 比如使用 `xor` 替换 `not`: `def : Pat<(not CPURegs:$in), (XOR CPURegs:$in, (ADDiu ZR, -1))>;`
+  - 结点变换: 修改已有的 DAG 结点, 如取立即数的高 16 位.
+  - 指令别名
+
+3. 描述调用约定. `XXX/XXXCallingConv.td`. 我们这里只是约定传参和返回值的寄存器, 以及被调用者保存的寄存器.
+
+4. 将以上组合到一起, 形成一个具体的 (sub)target. 在我们具体的项目中, 是 `Cpu0Other.td`.
+
+## C++ 部分
+主要是 `XXXInstrInfo.{cpp,h}` 和 `XXXRegisterInfo.{cpp,h}`.
+
+* `XXXRegisterInfo`: 指定保留寄存器 (一般的 C 语句翻译后不应当使用, 如 `$sp`, `$pc`), 指定翻译栈上地址的方式 (`off($sp)`)
+
+* `XXXInstrInfo`: 提供简单的物理指令生成, 如 `expandPostRAPseudo` (寄存器分配后的伪指令展开), `adjustStackPtr` (发射函数入口时调整 `$sp` 的指令)
+
+# 描述 TargetMachine
+基本复制粘贴其他 ISA 的 TargetMachine
+
+# 复杂的 DAG 控制
+## 栈布局控制
+`XXXFrameLowering.{cpp,h}` 中实现如下函数
+* `emitPrologue`: 发射进入函数时需要执行的代码, 如调整 `$sp`
+* `emitEpilogue`: 发射离开函数时执行的代码
+* `spillCalleeSavedRegisters`: 发射用于保存 callee-saved 寄存器的代码.
+* `determineCalleeSaves`: 确定那些寄存器要被保存. 被修改的 callee-saved 寄存器需要被保存 (包括 `jalr` 等对 `$lr` 的修改)
+
+## 复杂 Lowering
+这一部分我还在继续研究.
+这一部分包括函数调用, 返回的等. 因为函数调用传参可能包括可变参数, 以及用完传参寄存器后用栈传参等情况.
+
+# 打印汇编代码
+* `XXXMCInstLower`: 将 `MachineInstr` 变成可以发射的 `MCInst`
+* `XXXAsmPrinter`: 把机器指令转换成字符串之后输出到输出流中
+* `InstPrinter/XXXInstPrinter`: 提供操作数如何用字符欢表示,
+  再由 tablegen 整合 ISA 描述部分的汇编表示, 完成指令转换成字符串
+
+# 机器代码发射
+* `MCTargetDesc/XXXAsmBAckend`: 提供汇编语言中需要的 fixup (类似重定位)
+* `MCTargetDesc/XXXMCAsmInfo`: 我们项目中, 汇编信息就是各种 linker / loader 指令的字符串表示
+* `MCTargetDesc/XXXMCCodeEmitter`: 类似上面的 AsmPrinter, 只不过生成的是二进制 .o 结果而非汇编结果.
+  因此, 还需要加入重定位的内容 (reloc 和 symbols).
+* `MCTargetDesc/XXXMCExpr`: 机器代码中也可能有表达式, 如 `addiu $t0, $t0, 100-50`,
+  或者 `lui $t0, %hi(symb); ori $t0, $t0, %lo(symb)` (加载 `symb` 的地址到 `$t0` 中)
+* `MCTargetDesc/XXXMCTargetDesc`: 提供创建描述代码生成的关键类的函数声明, 如 `createXXXMCCodeEmitter() -> MCCodeEmitter` 等
+
+# 汇编器
+汇编器主要相关的文件是 `XXX/AsmParser/XXXAsmParser.cpp`.
+其中就是一个简单的汇编语言的前端.
+
+# 链接器
+链接器接受输入是若干可链接的目标文件 (通常是 .o 文件),
+输出是将这些目标文件打包变成可执行文件 (a.out 文件) 等格式.
+为了简单其间, 以下只叙述把 .o 链接变成 a.out 可执行文件的情况.
+
+链接器的工作分为两部分
+* 扫描得到输入文件中所有符号 (包括函数, 变量), 确定每个符号在最终可执行文件
+* 对于引用这些符号的汇编指令 (如 `lui $t0, %hi(extern_var)`), 用确定之后的符号地址改写这些汇编指令 (如确定之前 `lui` 的立即数)
+
+## 链接器的实现
+容易看出来, 链接器的工作和 ISA 关系不大.
+主要有关系的就是重定位类型 (relocation type),
+虽然 ISA 会间接决定重定位类型有哪些.
+
+在我们现在这个简单的版本中, 事实上我们只需要
+* `R_CPU0_32`: 包含目标符号地址整个 32 位的重定位
+* `R_CPU0_HI16`, `R_CPU_LO16`: 包含目标符号地址整个 32 位的重定位
+* `R_CPU0_PC16`, `R_CPU0_PC24`: 相对当前 PC 的 16 和 26 (`PC24` 是打错了) 位范围内的跳转
+
+因此链接器我们直接使用 Cpu0 的链接器就行了.
+但是 Cpu0 中照抄 Mips 出现了 bug,
+在对于 HI16 这种重定位类型时, 它取 `V` 的高十六位是 `(V+0x8000)>>16`,
+但是在我们的 ISA 中取 `V>>16` 即可, 就是不用考虑第 15 位.
 
 # 参考文献
-* Getting Started with LLVM Core Libraries.pdf
-* Cpu0 两篇文档
-* tricore\_llvm.pdf
-* Cormack-BuildingAnLLVMBackend.pdf
+* [Getting Started with LLVM Core Libraries](https://e.jd.com/30370568.html), 百度也能找到电子书
+* Cpu0 两篇文档: [lbd](http://jonathan2251.github.io/lbd/) [lbt](http://jonathan2251.github.io/lbt/)
+* [Building an LLVM Backend - LLVM 2014 tutorial](http://llvm.org/devmtg/2014-10/Slides/Cormack-BuildingAnLLVMBackend.pdf)
+* [Howto: Implementing LLVM Integrated Assembler - A Simple Guide](https://www.embecosm.com/appnotes/ean10/ean10-howto-llvmas-1.0.pdf)
